@@ -3,10 +3,19 @@
     min-height: 100vh;
 }
 
+.mainCollapsed {
+    flex: 1;
+    padding: var(--space-8);
+    margin-left: 80px;
+    /* Collapsed width */
+    width: calc(100% - 80px);
+    transition: margin-left 0.3s, width 0.3s;
+}
+
 .main {
     flex: 1;
     padding: var(--space-8);
     margin-left: 260px;
-    /* Sidebar width */
     width: calc(100% - 260px);
+    transition: margin-left 0.3s, width 0.3s;
 }

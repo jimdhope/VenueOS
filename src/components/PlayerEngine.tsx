@@ -85,18 +85,53 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
 
         es.onmessage = async (ev) => {
             try {
-                // Re-fetch the latest config when an event arrives
-                await fetchConfig();
-                // Reset playback index to start of new playlist
-                setCurrentIndex(0);
+                // If the event data starts with {, it's likely JSON.
+                // The current server sends `data: { ... }` or generic messages.
+                // We blindly parse.
+                const data = JSON.parse(ev.data);
+
+                if (data.type === 'timecode:started') {
+                    // Update local status immediately
+                    setTimecodeStatus(prev => ({
+                        ...prev!,
+                        id: data.timecodeId,
+                        startedAt: data.startedAt,
+                        isRunning: true,
+                        elapsedMs: 0 // Will be recalculated by local loop
+                    }));
+                } else if (data.type === 'timecode:stopped') {
+                    setTimecodeStatus(prev => ({
+                        ...prev!,
+                        isRunning: false
+                    }));
+                } else if (data.type === 'timecode:assigned') {
+                    // Re-fetch config to get full timecode details
+                    await fetchConfig();
+                } else if (data.type === 'timecode:updated') {
+                    // Update speed or name
+                    setTimecodeStatus(prev => ({
+                        ...prev!,
+                        speed: data.speed ?? prev?.speed ?? 1.0,
+                        name: data.name ?? prev?.name
+                    }));
+                } else if (data.type === 'playlist:updated' || data.type === 'screen:updated') {
+                    // Playlist content changed or screen updated, refetch all
+                    await fetchConfig();
+                    setCurrentIndex(0);
+                } else {
+                    // Default / Config update
+                    await fetchConfig();
+                    setCurrentIndex(0);
+                }
             }
             catch (e) {
-                console.error('PlayerEngine onmessage error', e);
+                // Fallback for non-JSON messages (like the initial connection message)
+                // or just log error
+                // console.debug('Non-JSON SSE message or parse error:', ev.data);
             }
         };
 
         es.onerror = (err) => {
-            // EventSource will attempt to reconnect; log for debugging
             console.warn('PlayerEngine EventSource error', err);
         };
 
@@ -107,51 +142,46 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
         };
     }, [screenId, fetchConfig]);
 
-    // Content Cycling Logic — or Timecode Sync if timecode is active
+    // Local Sync Loop: Calculate current index based on timecode
+    // Replaces the network poll for driving the UI
     useEffect(() => {
-        if (!config || !config.playlist || config.playlist.entries.length === 0) {
-            setIsLoading(false);
-            return;
-        }
+        if (!config?.timecodeId || !timecodeStatus?.isRunning) return;
 
-        setIsLoading(false);
-        const entries = config.playlist.entries;
+        const syncLoop = () => {
+            if (!config.playlist?.entries) return;
 
-        // If timecode is assigned and active, sync to timecode
-        if (config.timecodeId && timecodeStatus) {
-            // Calculate which entry we should be on based on elapsed time
+            const now = new Date();
+            const startTime = new Date(timecodeStatus.startedAt);
+            const elapsedRaw = now.getTime() - startTime.getTime();
+            const elapsed = elapsedRaw * timecodeStatus.speed;
+
+            // Logic to find index
+            const entries = config.playlist.entries;
             let accumulatedTime = 0;
             let targetIndex = 0;
 
             for (let i = 0; i < entries.length; i++) {
                 const entry = entries[i];
                 const duration = (entry.duration || entry.content.duration || 10) * 1000;
-                if (accumulatedTime + duration > timecodeStatus.elapsedMs) {
+                if (accumulatedTime + duration > elapsed) {
                     targetIndex = i;
                     break;
                 }
                 accumulatedTime += duration;
             }
 
-            setCurrentIndex(targetIndex);
-            return; // Don't set a timeout; wait for next timecode poll
-        }
+            // Only update if changed prevents thrashing
+            setCurrentIndex(prev => prev !== targetIndex ? targetIndex : prev);
+        };
 
-        // Otherwise use local timer
-        const currentEntry = entries[currentIndex];
-        const duration = (currentEntry.duration || currentEntry.content.duration || 10) * 1000;
+        // Run frequently (e.g. 100ms) for responsiveness, but purely local
+        const interval = setInterval(syncLoop, 100);
+        return () => clearInterval(interval);
+    }, [config, timecodeStatus]);
 
-        const timer = setTimeout(() => {
-            setCurrentIndex((prev) => (prev + 1) % entries.length);
-        }, duration);
-
-        return () => clearTimeout(timer);
-    }, [config, currentIndex, timecodeStatus]);
-
-    // Poll timecode status if screen has a timecode assigned
+    // Drift Check: Poll timecode status occasionally (e.g. 10s) instead of 100ms
     useEffect(() => {
         if (!config?.timecodeId) {
-            // Clear interval if no timecode
             if (timecodeIntervalRef.current) {
                 clearInterval(timecodeIntervalRef.current);
                 timecodeIntervalRef.current = null;
@@ -165,17 +195,15 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
                 if (res.ok) {
                     const status = await res.json();
                     setTimecodeStatus(status);
-                } else {
-                    console.warn('Failed to fetch timecode status:', res.status);
                 }
             } catch (error) {
                 console.error('Error fetching timecode:', error);
             }
         };
 
-        // Poll timecode every 100ms for tight sync (adjust if needed for performance)
         fetchTimecode();
-        timecodeIntervalRef.current = setInterval(fetchTimecode, 100);
+        // 10 seconds sync
+        timecodeIntervalRef.current = setInterval(fetchTimecode, 10000);
 
         return () => {
             if (timecodeIntervalRef.current) {
@@ -262,7 +290,7 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
             )}
 
             {content.type === 'COMPOSITION' && content.data && (
-                <CompositionRenderer 
+                <CompositionRenderer
                     data={content.data as string}
                     matrixRow={config.matrixRow ?? undefined}
                     matrixCol={config.matrixCol ?? undefined}

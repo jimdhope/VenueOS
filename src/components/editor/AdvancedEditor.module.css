@@ -1,0 +1,126 @@
+.editorContainer {
+    display: flex;
+    height: calc(100vh - 60px);
+    /* Adjust based on header height */
+    width: 100%;
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 80px;
+    background-color: #27272a;
+    border-right: 1px solid #3f3f46;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 15px;
+    z-index: 10;
+}
+
+.sidebarButton {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    border: none;
+    background-color: #3f3f46;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    gap: 4px;
+    transition: background-color 0.2s;
+}
+
+.sidebarButton:hover {
+    background-color: #52525b;
+}
+
+.canvasArea {
+    flex: 1;
+    background-color: #111;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    /* Hide overflow */
+    min-width: 0;
+    /* Important for flex child overflow */
+}
+
+.canvasWrapper {
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+}
+
+.sidebar.collapsed {
+    width: 50px;
+}
+
+.sidebar.collapsed .sidebarButton {
+    width: 40px;
+    height: 40px;
+}
+
+.sidebar.collapsed .sidebarButton span:last-child {
+    display: none;
+    /* Hide text label */
+}
+
+.propertiesPanel {
+    width: 280px;
+    background-color: #27272a;
+    border-left: 1px solid #3f3f46;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.panelSection {
+    border-bottom: 1px solid #3f3f46;
+    padding-bottom: 15px;
+}
+
+.panelTitle {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #a1a1aa;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.propertyRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 0.8rem;
+    color: #a1a1aa;
+}
+
+.input {
+    background-color: #18181b;
+    border: 1px solid #3f3f46;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    width: 100%;
+}

@@ -35,7 +35,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({ width, height, effect }) =>
     return (
         <div className={styles.canvasContainer} style={{ width: width, height: height }}>
             <canvas ref={canvasRef} />
-            <EffectsOverlay effect={effect} width={width} height={height} />
+            <EffectsOverlay effect={effect} />
         </div>
     );
 };

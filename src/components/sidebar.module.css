@@ -10,10 +10,46 @@
     top: 0;
     padding: var(--space-6);
     z-index: 50;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+.toggleBtn {
+    position: absolute;
+    top: 24px;
+    right: -12px;
+    width: 24px;
+    height: 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    z-index: 100;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.toggleBtn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
 
 .logo {
     margin-bottom: var(--space-8);
+    height: 40px;
+    display: flex;
+    align-items: center;
+    /* justify-content: flex-start;  Keep left aligned for transition mostly */
+    overflow: hidden;
 }
 
 .logo h1 {
@@ -21,6 +57,16 @@
     font-weight: 700;
     color: var(--primary);
     letter-spacing: -0.025em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.logoText {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
 }
 
 .nav {
@@ -33,11 +79,37 @@
 .link {
     display: flex;
     align-items: center;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-3);
     border-radius: var(--radius-md);
     color: var(--text-secondary);
     font-weight: 500;
     transition: all 0.2s;
+    height: 46px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar.collapsed .link {
+    justify-content: center;
+    padding: var(--space-3) 0;
+}
+
+.sidebar.collapsed .linkLabel {
+    margin-left: 0;
+    width: 0;
+    opacity: 0;
+}
+
+.iconWrapper {
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.linkLabel {
+    margin-left: var(--space-3);
+    transition: opacity 0.2s;
 }
 
 .link:hover {
@@ -60,6 +132,8 @@
     gap: var(--space-3);
     padding-top: var(--space-4);
     border-top: 1px solid var(--border);
+    overflow: hidden;
+    /* Hide name if collapsed */
 }
 
 .avatar {
@@ -73,11 +147,14 @@
     color: var(--text-primary);
     font-weight: 600;
     border: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 .info {
     display: flex;
     flex-direction: column;
+    white-space: nowrap;
+    transition: opacity 0.2s;
 }
 
 .name {

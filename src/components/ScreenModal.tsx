@@ -21,6 +21,7 @@ type Screen = {
     status: string;
     matrixRow: number | null;
     matrixCol: number | null;
+    timecodeId: string | null;
 };
 
 type Playlist = {
@@ -271,8 +272,8 @@ export default function ScreenModal({ isOpen, onClose, screen, spaces, playlists
                                 resolutionOption === '1080p'
                                     ? '1920x1080'
                                     : resolutionOption === '4k'
-                                    ? '3840x2160'
-                                    : (customWidth && customHeight) ? `${customWidth}x${customHeight}` : (screen?.resolution || '')
+                                        ? '3840x2160'
+                                        : (customWidth && customHeight) ? `${customWidth}x${customHeight}` : (screen?.resolution || '')
                             }
                         />
                     </div>

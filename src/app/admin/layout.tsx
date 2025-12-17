@@ -1,5 +1,4 @@
-import Sidebar from '@/components/Sidebar';
-import styles from './layout.module.css';
+import AdminClientLayout from './AdminClientLayout';
 
 export default function AdminLayout({
     children,
@@ -7,11 +6,8 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className={styles.layout}>
-            <Sidebar />
-            <main className={styles.main}>
-                {children}
-            </main>
-        </div>
+        <AdminClientLayout>
+            {children}
+        </AdminClientLayout>
     );
 }

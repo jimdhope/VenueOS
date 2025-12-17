@@ -3,7 +3,15 @@ import EventEmitter from 'events';
 // Simple in-memory broadcaster for server-sent events.
 // This is fine for single-process development. For multi-process (production), replace with Redis or another pub/sub.
 
-const emitter = new EventEmitter();
+const globalEmitter = globalThis as unknown as { __venueos_emitter: EventEmitter };
+
+if (!globalEmitter.__venueos_emitter) {
+  globalEmitter.__venueos_emitter = new EventEmitter();
+  // increase limit just in case
+  globalEmitter.__venueos_emitter.setMaxListeners(100);
+}
+
+const emitter = globalEmitter.__venueos_emitter;
 
 export function subscribe(channel: string, handler: (data: any) => void) {
   emitter.on(channel, handler);

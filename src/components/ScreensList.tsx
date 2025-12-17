@@ -17,6 +17,9 @@ type ScreenWithDetails = {
     updatedAt: Date;
     spaceId: string;
     playlistId: string | null;
+    matrixRow: number | null;
+    matrixCol: number | null;
+    timecodeId: string | null;
     space: {
         name: string;
         venue: { name: string };

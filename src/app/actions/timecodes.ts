@@ -59,10 +59,29 @@ export async function updateTimecode(id: string, prevState: any, formData: FormD
     const { name, speed } = validatedFields.data;
 
     try {
-        await prisma.timecode.update({
+        const timecode = await prisma.timecode.update({
             where: { id },
             data: { name, speed },
         });
+
+        // Notify all connected screens using this timecode
+        const screensUsingTimecode = await prisma.screen.findMany({
+            where: { timecodeId: id },
+        });
+
+        for (const screen of screensUsingTimecode) {
+            try {
+                notify(`screen:${screen.id}`, {
+                    type: 'timecode:updated',
+                    timecodeId: id,
+                    speed: timecode.speed,
+                    name: timecode.name,
+                });
+            } catch (e) {
+                console.error('DEBUG notify timecode:updated error', e);
+            }
+        }
+
         revalidatePath('/admin/timecodes');
         return { success: true, message: 'Timecode updated successfully.' };
     } catch (error) {
@@ -74,9 +93,27 @@ export async function updateTimecode(id: string, prevState: any, formData: FormD
 
 export async function deleteTimecode(id: string) {
     try {
+        // Find screens first
+        const screensUsingTimecode = await prisma.screen.findMany({
+            where: { timecodeId: id },
+        });
+
         await prisma.timecode.delete({
             where: { id },
         });
+
+        // Notify screens that timecode is gone
+        for (const screen of screensUsingTimecode) {
+            try {
+                notify(`screen:${screen.id}`, {
+                    type: 'timecode:deleted',
+                    timecodeId: id,
+                });
+            } catch (e) {
+                console.error('DEBUG notify timecode:deleted error', e);
+            }
+        }
+
         revalidatePath('/admin/timecodes');
         return { message: 'Timecode deleted.' };
     } catch (error) {

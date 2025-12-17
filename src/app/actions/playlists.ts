@@ -8,13 +8,33 @@ const PlaylistSchema = z.object({
     name: z.string().min(1, 'Name is required'),
 });
 
+import { notify } from '@/lib/broadcaster';
+
+// Helper to notify all screens watching a playlist
+async function notifyPlaylistUpdate(playlistId: string) {
+    try {
+        const screens = await prisma.screen.findMany({
+            where: { playlistId },
+        });
+
+        for (const screen of screens) {
+            notify(`screen:${screen.id}`, {
+                type: 'playlist:updated',
+                playlistId,
+            });
+        }
+    } catch (e) {
+        console.error('DEBUG notifyPlaylistUpdate error', e);
+    }
+}
+
 const EntrySchema = z.object({
     playlistId: z.string(),
     contentId: z.string(),
     duration: z.coerce.number().min(1).optional(),
 });
 
-export async function createPlaylist(prevState: any, formData: FormData) {
+export async function createPlaylist(prevState: Record<string, unknown> | null, formData: FormData) {
     const validatedFields = PlaylistSchema.safeParse({
         name: formData.get('name'),
     });
@@ -48,6 +68,10 @@ export async function updatePlaylist(id: string, name: string) {
             where: { id },
             data: { name },
         });
+
+        // Notify screens (if name changes, maybe they need to know? mostly internal though)
+        // notifyPlaylistUpdate(id); 
+
         revalidatePath('/admin/playlists');
         revalidatePath(`/admin/playlists/${id}`);
         return { success: true, message: 'Playlist updated.' };
@@ -90,6 +114,7 @@ export async function addPlaylistEntry(playlistId: string, contentId: string) {
             },
         });
 
+        await notifyPlaylistUpdate(playlistId);
         revalidatePath(`/admin/playlists/${playlistId}`);
         return { success: true };
     } catch (error) {
@@ -102,6 +127,7 @@ export async function removePlaylistEntry(entryId: string, playlistId: string) {
         await prisma.playlistEntry.delete({
             where: { id: entryId },
         });
+        await notifyPlaylistUpdate(playlistId);
         revalidatePath(`/admin/playlists/${playlistId}`);
         return { success: true };
     } catch (error) {
@@ -119,6 +145,7 @@ export async function updateEntryDuration(
             where: { id: entryId },
             data: { duration },
         });
+        await notifyPlaylistUpdate(playlistId);
         revalidatePath(`/admin/playlists/${playlistId}`);
         return { success: true };
     } catch (error) {
@@ -139,6 +166,7 @@ export async function reorderEntries(
         );
 
         await prisma.$transaction(transaction);
+        await notifyPlaylistUpdate(playlistId);
         revalidatePath(`/admin/playlists/${playlistId}`);
         return { success: true };
     } catch (error) {

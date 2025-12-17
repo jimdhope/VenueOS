@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { EditorProvider, useEditor } from './EditorContext';
-import EditorLayout from './EditorLayout';
-import EditorSidebar from './EditorSidebar';
-import EditorCanvas from './EditorCanvas';
-import EditorProperties from './EditorProperties';
+// import EditorLayout from './EditorLayout';
+import AdvancedEditor, { AdvancedEditorRef } from './AdvancedEditor';
+// import EditorSidebar from './EditorSidebar';
+// import EditorCanvas from './EditorCanvas';
+// import EditorProperties from './EditorProperties';
 import CanvasSettingsModal from '../CanvasSettingsModal';
 import { createContent, updateContent } from '../../app/actions/content';
 import { fabric } from 'fabric';
@@ -22,6 +23,7 @@ function EditorShell({
     const { canvas } = useEditor();
     const router = useRouter();
     const [saving, setSaving] = useState(false);
+    const editorRef = useRef<AdvancedEditorRef>(null);
 
     // Initialize state if data exists
     useEffect(() => {
@@ -80,15 +82,19 @@ function EditorShell({
         }
     }, [initialData]);
 
-    const onSave = async () => {
-        if (!canvas) return;
-        setSaving(true);
+    const handleSaveTrigger = async () => {
+        if (editorRef.current) {
+            editorRef.current.triggerSave();
+        }
+    };
 
+    const handleEditorSave = async (fabricJson: any) => {
+        setSaving(true);
         const payload = JSON.stringify({
             width: canvasWidth,
             height: canvasHeight,
-            meta: { effect }, // Save effect
-            fabric: canvas.toJSON(['id'])
+            meta: { effect },
+            fabric: fabricJson
         });
 
         const formData = new FormData();
@@ -122,6 +128,7 @@ function EditorShell({
             setSaving(false);
         }
     };
+
 
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -204,20 +211,22 @@ function EditorShell({
                     </button>
                     <button
                         className="btn btn-primary"
-                        onClick={onSave}
+                        onClick={handleSaveTrigger}
                         disabled={saving}
+                        style={{ marginLeft: 10, padding: '6px 12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}
                     >
                         {saving ? 'Saving...' : 'Save Composition'}
                     </button>
                 </div>
             </header>
             <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
-                <EditorLayout
-                    sidebar={<EditorSidebar />}
-                    canvas={
-                        <EditorCanvas width={canvasWidth} height={canvasHeight} effect={effect} />
-                    }
-                    properties={<EditorProperties />}
+                <AdvancedEditor
+                    ref={editorRef}
+                    initialData={initialData?.data ? JSON.parse(initialData.data)?.fabric : null}
+                    width={canvasWidth}
+                    height={canvasHeight}
+                    effect={effect}
+                    onSave={handleEditorSave}
                 />
             </div>
 
@@ -235,6 +244,7 @@ function EditorShell({
             )}
         </div>
     );
+
 }
 
 export default function EditorMain({ contentId, initialData }: { contentId: string; initialData?: any }) {
