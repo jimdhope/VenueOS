@@ -1,0 +1,141 @@
+.container {
+    margin-top: 1rem;
+    border-top: 1px solid #3f3f46;
+    padding-top: 1rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #fff;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.card {
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cardTitle {
+    color: #fff;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.priorityBadge {
+    background: #3b82f6;
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.cardDetail {
+    color: #a1a1aa;
+    font-size: 0.85rem;
+}
+
+.cardMeta {
+    color: #71717a;
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+.deleteBtn {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0 5px;
+}
+
+.deleteBtn:hover {
+    color: #f87171;
+}
+
+.formCard {
+    background: #18181b;
+    border: 1px solid #52525b;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 1rem;
+}
+
+.formRow {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.field {
+    flex: 1;
+}
+
+.field label {
+    display: block;
+    color: #a1a1aa;
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+}
+
+.input,
+.select {
+    width: 100%;
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    color: white;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.daysGrid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.dayCheck {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: #fff;
+    cursor: pointer;
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.empty {
+    color: #71717a;
+    font-style: italic;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem;
+}

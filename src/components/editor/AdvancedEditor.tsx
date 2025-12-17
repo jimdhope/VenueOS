@@ -48,6 +48,51 @@ const AdvancedEditor = forwardRef<AdvancedEditorRef, AdvancedEditorProps>(({ ini
     const fabricCanvas = useRef<fabric.Canvas | null>(null);
     const currentAnimation = useRef<anime.AnimeInstance | null>(null);
 
+    // Helper to calculate countdown text from config
+    const getCountdownText = (config: any): string => {
+        const target = new Date(config.targetDate);
+        const now = new Date();
+        const diff = target.getTime() - now.getTime();
+
+        if (diff <= 0) return '🎉 Now!';
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        const totalHours = Math.floor(totalMinutes / 60);
+        const totalDays = Math.floor(totalHours / 24);
+        const totalMonths = Math.floor(totalDays / 30.44);
+        const totalYears = Math.floor(totalDays / 365.25);
+
+        const parts: string[] = [];
+        const hideLabels = config.hideLabels || false;
+
+        if (config.showYears) {
+            parts.push(hideLabels ? `${totalYears}` : `${totalYears}y`);
+        }
+        if (config.showMonths) {
+            const months = config.showYears ? Math.floor((totalDays % 365.25) / 30.44) : totalMonths;
+            parts.push(hideLabels ? `${months}` : `${months}mo`);
+        }
+        if (config.showDays) {
+            let days = totalDays;
+            if (config.showYears) days = Math.floor(totalDays % 365.25);
+            if (config.showMonths && !config.showYears) days = Math.floor(totalDays % 30.44);
+            if (config.showMonths && config.showYears) days = Math.floor((totalDays % 365.25) % 30.44);
+            parts.push(hideLabels ? `${days}` : `${days}d`);
+        }
+        if (config.showHours) {
+            parts.push(hideLabels ? `${totalHours % 24}` : `${totalHours % 24}h`);
+        }
+        if (config.showMinutes) {
+            parts.push(hideLabels ? `${totalMinutes % 60}` : `${totalMinutes % 60}m`);
+        }
+        if (config.showSeconds) {
+            parts.push(hideLabels ? `${totalSeconds % 60}` : `${totalSeconds % 60}s`);
+        }
+
+        return parts.length > 0 ? parts.join(' ') : `${totalDays}d`;
+    };
+
     // UI State
     const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
     const [scale, setScale] = useState(1);
@@ -70,8 +115,8 @@ const AdvancedEditor = forwardRef<AdvancedEditorRef, AdvancedEditorProps>(({ ini
                 fabricCanvas.current.setViewportTransform([1, 0, 0, 1, 0, 0]);
                 fabricCanvas.current.setDimensions({ width, height });
 
-                // Ensure custom properties are exported
-                const json = fabricCanvas.current.toObject(['effects', 'id', 'name']);
+                // Ensure custom properties are exported (including countdown and webpage)
+                const json = fabricCanvas.current.toObject(['effects', 'id', 'name', 'isCountdown', 'countdownData', 'isWebpage', 'webpageUrl']);
 
                 // Restore zoom
                 fabricCanvas.current.setZoom(currentZoom);
@@ -133,6 +178,37 @@ const AdvancedEditor = forwardRef<AdvancedEditorRef, AdvancedEditorProps>(({ ini
             fabricCanvas.current = null;
         };
     }, []);
+
+    // Live countdown updates in editor
+    useEffect(() => {
+        const updateCountdowns = () => {
+            if (!fabricCanvas.current) return;
+            const objects = fabricCanvas.current.getObjects();
+            let needsRender = false;
+
+            objects.forEach((obj: any) => {
+                if (obj.isCountdown && obj.countdownData) {
+                    try {
+                        const config = JSON.parse(obj.countdownData);
+                        const newText = getCountdownText(config);
+                        if (obj.text !== newText) {
+                            obj.set('text', newText);
+                            needsRender = true;
+                        }
+                    } catch (e) { }
+                }
+            });
+
+            if (needsRender) {
+                fabricCanvas.current.renderAll();
+            }
+        };
+
+        updateCountdowns(); // Initial update
+        const interval = setInterval(updateCountdowns, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
 
     // Handle Resize & Auto-scale
     useEffect(() => {
@@ -254,16 +330,49 @@ const AdvancedEditor = forwardRef<AdvancedEditorRef, AdvancedEditorProps>(({ ini
         fabricCanvas.current.setActiveObject(rect);
     };
 
+    const addCountdown = () => {
+        if (!fabricCanvas.current) return;
+
+        // Default to 30 days from now
+        const defaultTarget = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+        const text = new fabric.IText('00', {
+            left: 300, top: 300, fill: '#ffffff', fontSize: 80, fontFamily: 'Arial',
+            fontWeight: 'bold',
+        });
+        (text as any).isCountdown = true;
+        (text as any).countdownData = JSON.stringify({
+            targetDate: defaultTarget.toISOString(),
+            showYears: false,
+            showMonths: false,
+            showDays: true,
+            showHours: false,
+            showMinutes: false,
+            showSeconds: false,
+        });
+
+        fabricCanvas.current.add(text);
+        fabricCanvas.current.setActiveObject(text);
+    };
+
     // Media Modal Selection
     const onSelectMedia = (item: any) => {
         if (fabricCanvas.current && item.url) {
+            // Always store relative URLs to ensure cross-device compatibility
+            const relativeUrl = item.url.startsWith('http') 
+                ? new URL(item.url).pathname 
+                : item.url;
+            
             fabric.Image.fromURL(item.url, (img) => {
                 img.set({ left: width / 2, top: height / 2, originX: 'center', originY: 'center' });
-                // Scale to 25% of canvas width by default
-                const targetWidth = width * 0.25;
-                img.scaleToWidth(targetWidth);
-                fabricCanvas.current?.add(img);
-                fabricCanvas.current?.setActiveObject(img);
+                // Store the relative URL in the image source
+                img.setSrc(relativeUrl, () => {
+                    // Scale to 25% of canvas width by default
+                    const targetWidth = width * 0.25;
+                    img.scaleToWidth(targetWidth);
+                    fabricCanvas.current?.add(img);
+                    fabricCanvas.current?.setActiveObject(img);
+                });
             });
         }
         setMediaModalOpen(false);
@@ -574,6 +683,10 @@ const AdvancedEditor = forwardRef<AdvancedEditorRef, AdvancedEditorProps>(({ ini
                     <span style={{ fontSize: '1.2rem' }}>🌐</span>
                     <span>Web</span>
                 </button>
+                <button className={styles.sidebarButton} onClick={addCountdown} title="Add Countdown">
+                    <span style={{ fontSize: '1.2rem' }}>⏱️</span>
+                    <span>Timer</span>
+                </button>
             </div>
 
             {/* Canvas Area */}
@@ -670,8 +783,8 @@ const AdvancedEditor = forwardRef<AdvancedEditorRef, AdvancedEditorProps>(({ ini
                         <div className={styles.panelTitle}>Design</div>
                         {activeObject ? (
                             <>
-                                {/* Text Specific */}
-                                {activeObject.type === 'i-text' && (
+                                {/* Text Specific (but NOT for countdown objects) */}
+                                {activeObject.type === 'i-text' && !(activeObject as any).isCountdown && (
                                     <div className={styles.propertyRow} style={{ flexDirection: 'column', alignItems: 'stretch' }}>
                                         <div className={styles.inputGroup}>
                                             <span className={styles.label}>Content</span>
@@ -697,8 +810,231 @@ const AdvancedEditor = forwardRef<AdvancedEditorRef, AdvancedEditorProps>(({ ini
                                                 />
                                             </div>
                                         </div>
+
+                                        {/* Font Family */}
+                                        <div className={styles.inputGroup} style={{ marginTop: 8 }}>
+                                            <span className={styles.label}>Font</span>
+                                            <select
+                                                className={styles.formatSelect}
+                                                value={(activeObject as fabric.IText).fontFamily || 'Arial'}
+                                                onChange={(e) => {
+                                                    (activeObject as fabric.IText).set('fontFamily', e.target.value);
+                                                    fabricCanvas.current?.renderAll();
+                                                }}
+                                            >
+                                                <option value="Arial">Arial</option>
+                                                <option value="Helvetica">Helvetica</option>
+                                                <option value="Times New Roman">Times New Roman</option>
+                                                <option value="Georgia">Georgia</option>
+                                                <option value="Verdana">Verdana</option>
+                                                <option value="Courier New">Courier New</option>
+                                                <option value="Impact">Impact</option>
+                                                <option value="Comic Sans MS">Comic Sans MS</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Bold / Italic / Underline */}
+                                        <div className={styles.formattingToolbar}>
+                                            <button
+                                                className={`${styles.formatBtn} ${(activeObject as fabric.IText).fontWeight === 'bold' ? styles.active : ''}`}
+                                                onClick={() => {
+                                                    const isBold = (activeObject as fabric.IText).fontWeight === 'bold';
+                                                    (activeObject as fabric.IText).set('fontWeight', isBold ? 'normal' : 'bold');
+                                                    fabricCanvas.current?.renderAll();
+                                                    setUpdateCounter(c => c + 1);
+                                                }}
+                                                title="Bold"
+                                            >
+                                                <strong>B</strong>
+                                            </button>
+                                            <button
+                                                className={`${styles.formatBtn} ${(activeObject as fabric.IText).fontStyle === 'italic' ? styles.active : ''}`}
+                                                onClick={() => {
+                                                    const isItalic = (activeObject as fabric.IText).fontStyle === 'italic';
+                                                    (activeObject as fabric.IText).set('fontStyle', isItalic ? 'normal' : 'italic');
+                                                    fabricCanvas.current?.renderAll();
+                                                    setUpdateCounter(c => c + 1);
+                                                }}
+                                                title="Italic"
+                                            >
+                                                <em>I</em>
+                                            </button>
+                                            <button
+                                                className={`${styles.formatBtn} ${(activeObject as fabric.IText).underline ? styles.active : ''}`}
+                                                onClick={() => {
+                                                    const isUnderline = (activeObject as fabric.IText).underline;
+                                                    (activeObject as fabric.IText).set('underline', !isUnderline);
+                                                    fabricCanvas.current?.renderAll();
+                                                    setUpdateCounter(c => c + 1);
+                                                }}
+                                                title="Underline"
+                                            >
+                                                <u>U</u>
+                                            </button>
+                                            <button
+                                                className={`${styles.formatBtn} ${(activeObject as fabric.IText).linethrough ? styles.active : ''}`}
+                                                onClick={() => {
+                                                    const isStrike = (activeObject as fabric.IText).linethrough;
+                                                    (activeObject as fabric.IText).set('linethrough', !isStrike);
+                                                    fabricCanvas.current?.renderAll();
+                                                    setUpdateCounter(c => c + 1);
+                                                }}
+                                                title="Strikethrough"
+                                            >
+                                                <s>S</s>
+                                            </button>
+                                        </div>
+
+                                        {/* Text Alignment */}
+                                        <div className={styles.formattingToolbar} style={{ marginTop: 4 }}>
+                                            <button
+                                                className={`${styles.formatBtn} ${(activeObject as fabric.IText).textAlign === 'left' ? styles.active : ''}`}
+                                                onClick={() => { (activeObject as fabric.IText).set('textAlign', 'left'); fabricCanvas.current?.renderAll(); setUpdateCounter(c => c + 1); }}
+                                                title="Align Left"
+                                                style={{ fontSize: '0.7rem' }}
+                                            >◧</button>
+                                            <button
+                                                className={`${styles.formatBtn} ${(activeObject as fabric.IText).textAlign === 'center' ? styles.active : ''}`}
+                                                onClick={() => { (activeObject as fabric.IText).set('textAlign', 'center'); fabricCanvas.current?.renderAll(); setUpdateCounter(c => c + 1); }}
+                                                title="Align Center"
+                                                style={{ fontSize: '0.7rem' }}
+                                            >◫</button>
+                                            <button
+                                                className={`${styles.formatBtn} ${(activeObject as fabric.IText).textAlign === 'right' ? styles.active : ''}`}
+                                                onClick={() => { (activeObject as fabric.IText).set('textAlign', 'right'); fabricCanvas.current?.renderAll(); setUpdateCounter(c => c + 1); }}
+                                                title="Align Right"
+                                                style={{ fontSize: '0.7rem' }}
+                                            >◨</button>
+                                            <button
+                                                className={`${styles.formatBtn} ${(activeObject as fabric.IText).textAlign === 'justify' ? styles.active : ''}`}
+                                                onClick={() => { (activeObject as fabric.IText).set('textAlign', 'justify'); fabricCanvas.current?.renderAll(); setUpdateCounter(c => c + 1); }}
+                                                title="Justify"
+                                                style={{ fontSize: '0.7rem' }}
+                                            >▣</button>
+                                        </div>
                                     </div>
                                 )}
+
+                                {/* Countdown Specific */}
+                                {(activeObject as any).isCountdown && (() => {
+                                    const cdData = JSON.parse((activeObject as any).countdownData || '{}');
+                                    const updateCountdownData = (updates: any) => {
+                                        const newData = { ...cdData, ...updates };
+                                        (activeObject as any).countdownData = JSON.stringify(newData);
+                                        fabricCanvas.current?.renderAll();
+                                        setUpdateCounter(c => c + 1);
+                                    };
+                                    // Convert ISO to datetime-local format
+                                    const targetLocal = cdData.targetDate
+                                        ? new Date(cdData.targetDate).toISOString().slice(0, 16)
+                                        : '';
+
+                                    return (
+                                        <div className={styles.propertyRow} style={{ flexDirection: 'column', alignItems: 'stretch', marginTop: 12, paddingTop: 12, borderTop: '1px solid #444' }}>
+                                            <div className={styles.panelTitle} style={{ marginBottom: 8 }}>Countdown Settings</div>
+
+                                            <div className={styles.inputGroup}>
+                                                <span className={styles.label}>Target Date & Time</span>
+                                                <input
+                                                    type="datetime-local"
+                                                    className={styles.input}
+                                                    value={targetLocal}
+                                                    onChange={(e) => {
+                                                        const dt = new Date(e.target.value);
+                                                        updateCountdownData({ targetDate: dt.toISOString() });
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div style={{ marginTop: 8 }}>
+                                                <span className={styles.label}>Display Units</span>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 4 }}>
+                                                    {[
+                                                        { key: 'showYears', label: 'Years' },
+                                                        { key: 'showMonths', label: 'Months' },
+                                                        { key: 'showDays', label: 'Days' },
+                                                        { key: 'showHours', label: 'Hours' },
+                                                        { key: 'showMinutes', label: 'Minutes' },
+                                                        { key: 'showSeconds', label: 'Seconds' },
+                                                    ].map(({ key, label }) => (
+                                                        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', color: '#ccc', cursor: 'pointer' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={cdData[key] || false}
+                                                                onChange={(e) => updateCountdownData({ [key]: e.target.checked })}
+                                                            />
+                                                            {label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Hide Labels Option */}
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: '0.8rem', color: '#ccc', cursor: 'pointer' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={cdData.hideLabels || false}
+                                                    onChange={(e) => updateCountdownData({ hideLabels: e.target.checked })}
+                                                />
+                                                Hide unit labels (show numbers only)
+                                            </label>
+
+                                            {/* Text Formatting */}
+                                            <div style={{ marginTop: 12 }}>
+                                                <span className={styles.label}>Text Formatting</span>
+                                                <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                                                    <button
+                                                        className={`${styles.formatBtn} ${(activeObject as fabric.IText).fontWeight === 'bold' ? styles.active : ''}`}
+                                                        onClick={() => {
+                                                            const isBold = (activeObject as fabric.IText).fontWeight === 'bold';
+                                                            (activeObject as fabric.IText).set('fontWeight', isBold ? 'normal' : 'bold');
+                                                            fabricCanvas.current?.renderAll();
+                                                            setUpdateCounter(c => c + 1);
+                                                        }}
+                                                        title="Bold"
+                                                    ><strong>B</strong></button>
+                                                    <button
+                                                        className={`${styles.formatBtn} ${(activeObject as fabric.IText).fontStyle === 'italic' ? styles.active : ''}`}
+                                                        onClick={() => {
+                                                            const isItalic = (activeObject as fabric.IText).fontStyle === 'italic';
+                                                            (activeObject as fabric.IText).set('fontStyle', isItalic ? 'normal' : 'italic');
+                                                            fabricCanvas.current?.renderAll();
+                                                            setUpdateCounter(c => c + 1);
+                                                        }}
+                                                        title="Italic"
+                                                    ><em>I</em></button>
+                                                    <button
+                                                        className={`${styles.formatBtn} ${(activeObject as fabric.IText).underline ? styles.active : ''}`}
+                                                        onClick={() => {
+                                                            (activeObject as fabric.IText).set('underline', !(activeObject as fabric.IText).underline);
+                                                            fabricCanvas.current?.renderAll();
+                                                            setUpdateCounter(c => c + 1);
+                                                        }}
+                                                        title="Underline"
+                                                    ><u>U</u></button>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                                                    <span className={styles.label}>Color</span>
+                                                    <input
+                                                        type="color"
+                                                        className={styles.input}
+                                                        style={{ padding: 0, height: 28, width: 50 }}
+                                                        value={(activeObject as fabric.IText).fill as string || '#ffffff'}
+                                                        onChange={(e) => { (activeObject as fabric.IText).set('fill', e.target.value); fabricCanvas.current?.renderAll(); }}
+                                                    />
+                                                    <span className={styles.label}>Size</span>
+                                                    <input
+                                                        type="number"
+                                                        className={styles.input}
+                                                        style={{ width: 60 }}
+                                                        value={(activeObject as fabric.IText).fontSize || 80}
+                                                        onChange={(e) => { (activeObject as fabric.IText).set('fontSize', Number(e.target.value)); fabricCanvas.current?.renderAll(); }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Common Transforms */}
                                 <div className={styles.propertyRow}>

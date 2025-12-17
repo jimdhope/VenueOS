@@ -41,6 +41,7 @@ model Screen {
   playlist    Playlist? @relation(fields: [playlistId], references: [id], onDelete: SetNull)
   timecode    Timecode? @relation(fields: [timecodeId], references: [id], onDelete: SetNull)
   space       Space     @relation(fields: [spaceId], references: [id])
+  schedules   Schedule[]
 }
 
 model Timecode {
@@ -74,6 +75,7 @@ model Playlist {
   updatedAt DateTime        @updatedAt
   entries   PlaylistEntry[]
   screens   Screen[]
+  schedules Schedule[]
 }
 
 model PlaylistEntry {
@@ -84,4 +86,22 @@ model PlaylistEntry {
   duration   Int?
   content    Content  @relation(fields: [contentId], references: [id])
   playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+}
+
+model Schedule {
+  id        String    @id @default(uuid())
+  screenId  String
+  playlistId String
+  priority  Int       @default(0)
+  startDate DateTime?
+  endDate   DateTime?
+  startTime String?   // Format: "HH:mm" 24h
+  endTime   String?   // Format: "HH:mm" 24h
+  daysOfWeek String?  // Format: "0,1,2,3,4,5,6" (comma separated ints)
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  screen    Screen    @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  playlist  Playlist  @relation(fields: [playlistId], references: [id], onDelete: Cascade)
 }

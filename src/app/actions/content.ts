@@ -8,7 +8,7 @@ import path from 'path';
 
 const ContentSchema = z.object({
     name: z.string().min(1, 'Name is required'),
-    type: z.enum(['IMAGE', 'VIDEO', 'WEBSITE', 'MENU_HTML', 'COMPOSITION']),
+    type: z.enum(['IMAGE', 'VIDEO', 'WEBSITE', 'MENU_HTML', 'COMPOSITION', 'COUNTDOWN']),
     url: z.string().optional(),
     body: z.string().optional(),
     data: z.string().optional(), // JSON string

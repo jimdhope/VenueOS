@@ -14,6 +14,14 @@ export default async function ScreensPage() {
                     },
                 },
                 playlist: true,
+                schedules: {
+                    include: {
+                        playlist: true,
+                    },
+                    orderBy: {
+                        priority: 'desc',
+                    },
+                },
             },
             orderBy: { name: 'asc' },
         }),

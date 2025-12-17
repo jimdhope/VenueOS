@@ -5,34 +5,95 @@ import { inferMatrixDimensions } from '@/lib/matrix';
 
 export async function getScreenConfig(screenId: string) {
     try {
-        console.log(`DEBUG: getScreenConfig called for ID: ${screenId}`);
-        const screen = await prisma.screen.findUnique({
+        // console.log(`DEBUG: getScreenConfig called for ID: ${screenId}`);
+
+        // 1. Fetch Screen metadata + Schedules
+        // specialized query to get lightweight info first
+        const screenBase = await prisma.screen.findUnique({
             where: { id: screenId },
             include: {
-                playlist: {
+                schedules: {
                     include: {
-                        entries: {
-                            include: {
-                                content: true,
-                            },
-                            orderBy: {
-                                order: 'asc',
-                            },
-                        },
-                    },
-                },
-            },
+                        playlist: { select: { id: true, name: true } } // Minimal info for logging
+                    }
+                }
+            }
         });
 
-        if (!screen) {
-            console.log('DEBUG: getScreenConfig result: Screen Not Found');
+        if (!screenBase) {
+            // console.log('DEBUG: getScreenConfig result: Screen Not Found');
             return null;
         }
 
-        // Hydrate content data using Raw SQL to bypass Prisma staleness
-        if (screen?.playlist?.entries) {
-            const contentIds = screen.playlist.entries
-                .map(e => e.content.id)
+        // 2. Resolve Active Playlist ID
+        let activePlaylistId = screenBase.playlistId;
+        let activeScheduleName = null;
+
+        const now = new Date();
+        const currentDay = now.getDay(); // 0-6 Sun-Sat
+        // Format current time as HH:mm for string comparison
+        const currentHm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+        // Filter valid schedules
+        const validSchedules = screenBase.schedules.filter((s: any) => {
+            // Date Range
+            if (s.startDate && s.startDate > now) return false;
+            if (s.endDate && s.endDate < now) return false;
+
+            // Days of Week (e.g., "1,2,3,4,5")
+            if (s.daysOfWeek) {
+                const days = s.daysOfWeek.split(',').map((d: string) => parseInt(d.trim()));
+                if (!days.includes(currentDay)) return false;
+            }
+
+            // Time of Day (e.g., 09:00 - 17:00)
+            if (s.startTime && s.endTime) {
+                if (currentHm < s.startTime || currentHm > s.endTime) return false;
+            } else if (s.startTime) {
+                if (currentHm < s.startTime) return false; // Open ended start?
+            } else if (s.endTime) {
+                if (currentHm > s.endTime) return false; // Open ended end?
+            }
+
+            return true;
+        });
+
+        // Pick highest priority
+        if (validSchedules.length > 0) {
+            // Sort by Priority DESC, then CreatedAt DESC (newest wins tie)
+            validSchedules.sort((a: any, b: any) => {
+                if (b.priority !== a.priority) return b.priority - a.priority;
+                return b.createdAt.getTime() - a.createdAt.getTime();
+            });
+
+            const winner = validSchedules[0];
+            activePlaylistId = winner.playlistId;
+            activeScheduleName = winner.name;
+            // console.log(`DEBUG: Schedule Match: ${winner.name} (ID: ${winner.id}) -> Playlist: ${winner.playlistId}`);
+        }
+
+        // 3. Fetch Full Playlist Data
+        let fullPlaylist = null;
+        if (activePlaylistId) {
+            fullPlaylist = await prisma.playlist.findUnique({
+                where: { id: activePlaylistId },
+                include: {
+                    entries: {
+                        include: {
+                            content: true,
+                        },
+                        orderBy: {
+                            order: 'asc',
+                        },
+                    },
+                },
+            });
+        }
+
+        // 4. Hydrate Content Data (Raw SQL bypass)
+        if (fullPlaylist?.entries) {
+            const contentIds = fullPlaylist.entries
+                .map((e: any) => e.content.id)
                 .filter(Boolean);
 
             if (contentIds.length > 0) {
@@ -42,9 +103,9 @@ export async function getScreenConfig(screenId: string) {
                     ...contentIds
                 );
 
-                const dataMap = new Map(rawContents.map(c => [c.id, c.data]));
+                const dataMap = new Map(rawContents.map((c: any) => [c.id, c.data]));
 
-                screen.playlist.entries.forEach(entry => {
+                fullPlaylist.entries.forEach((entry: any) => {
                     if (dataMap.has(entry.content.id)) {
                         const rawData = dataMap.get(entry.content.id);
                         if (rawData) {
@@ -55,16 +116,21 @@ export async function getScreenConfig(screenId: string) {
             }
         }
 
-        // Infer matrix dimensions from all screens in the same space
+        // 5. Infer Matrix Dimensions
         const screensInSpace = await prisma.screen.findMany({
-            where: { spaceId: screen.spaceId },
+            where: { spaceId: screenBase.spaceId },
         });
         const { totalRows, totalCols } = inferMatrixDimensions(screensInSpace);
 
-        console.log(`DEBUG: getScreenConfig result: Found Screen ${screen.name}, Playlist: ${screen.playlistId}, Matrix: ${totalRows}x${totalCols}`);
-        
+        // console.log(`DEBUG: getScreenConfig: ${screenBase.name} -> Playlist ${activePlaylistId} (Sched: ${activeScheduleName || 'None'})`);
+
+        // Return combined object
+        // We attach the resolved 'playlist' to the screen object so the frontend sees it as THE playlist.
         return {
-            ...screen,
+            ...screenBase,
+            playlist: fullPlaylist,
+            playlistId: activePlaylistId, // Ensure ID matches populated data
+            activeScheduleName, // Optional metadata for debugging UI if needed
             totalRows,
             totalCols,
         };

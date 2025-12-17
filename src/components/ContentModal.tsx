@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './modal.module.css';
 
-type ContentType = 'IMAGE' | 'VIDEO' | 'WEBSITE' | 'MENU_HTML';
+type ContentType = 'IMAGE' | 'VIDEO' | 'WEBSITE' | 'MENU_HTML' | 'COUNTDOWN';
 
 type Content = {
     id: string;
@@ -93,7 +93,8 @@ export default function ContentModal({ isOpen, onClose, content }: ContentModalP
                     if (!res.ok) throw new Error(rj.error || 'Chunk upload failed');
                 }
 
-                finalUrl = `/uploads/${safeName}`;
+                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+                finalUrl = `${baseUrl}/uploads/${safeName}`;
             } else if (!useUpload) {
                 const urlVal = fd.get('url');
                 finalUrl = urlVal ? String(urlVal) : undefined;
@@ -102,12 +103,26 @@ export default function ContentModal({ isOpen, onClose, content }: ContentModalP
             }
 
             // Send metadata to server to create/update content record
+            // Build data JSON for COUNTDOWN type
+            let dataJson: string | undefined = undefined;
+            if (type === 'COUNTDOWN') {
+                const targetDate = fd.get('targetDate');
+                const displayFormat = fd.get('displayFormat') || 'days';
+                const label = fd.get('countdownLabel');
+                dataJson = JSON.stringify({
+                    targetDate: targetDate ? new Date(String(targetDate)).toISOString() : null,
+                    displayFormat: String(displayFormat),
+                    label: label ? String(label) : undefined,
+                });
+            }
+
             const payload: any = {
                 id: fd.get('id') ? String(fd.get('id')) : undefined,
                 name,
                 type,
                 url: finalUrl,
                 body: htmlBody,
+                data: dataJson,
                 duration,
             };
 
@@ -120,7 +135,7 @@ export default function ContentModal({ isOpen, onClose, content }: ContentModalP
             if (!completeRes.ok) throw new Error(completeJson.error || 'Failed to save content');
 
             // Refresh page data and close modal
-            try { router.refresh(); } catch (_) {}
+            try { router.refresh(); } catch (_) { }
             onClose();
         } catch (err: any) {
             console.error('Upload/create error', err);
@@ -169,6 +184,7 @@ export default function ContentModal({ isOpen, onClose, content }: ContentModalP
                             <option value="VIDEO">Video</option>
                             <option value="WEBSITE">Website</option>
                             <option value="MENU_HTML">Menu (HTML)</option>
+                            <option value="COUNTDOWN">Countdown Timer</option>
                         </select>
                     </div>
 
@@ -258,6 +274,49 @@ export default function ContentModal({ isOpen, onClose, content }: ContentModalP
                                 placeholder="<h1>Menu</h1><ul><li>Burger...</li></ul>"
                             />
                         </div>
+                    )}
+
+                    {selectedType === 'COUNTDOWN' && (
+                        <>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="targetDate">Target Date/Time</label>
+                                <input
+                                    type="datetime-local"
+                                    id="targetDate"
+                                    name="targetDate"
+                                    required
+                                    className={styles.input}
+                                />
+                                <p className={styles.helperText}>When should the countdown reach zero?</p>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="displayFormat">Display Format</label>
+                                <select
+                                    id="displayFormat"
+                                    name="displayFormat"
+                                    className={styles.select}
+                                    defaultValue="days"
+                                >
+                                    <option value="days">Days only (e.g., "42 days")</option>
+                                    <option value="hours">Hours only (e.g., "1008 hours")</option>
+                                    <option value="minutes">Minutes only</option>
+                                    <option value="seconds">Seconds only (live ticking)</option>
+                                    <option value="dhm">Days, Hours, Minutes (e.g., "42d 3h 15m")</option>
+                                    <option value="hms">HH:MM:SS (e.g., "01:23:45")</option>
+                                    <option value="full">Full (e.g., "42d 3h 15m 30s")</option>
+                                </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="countdownLabel">Label (optional)</label>
+                                <input
+                                    type="text"
+                                    id="countdownLabel"
+                                    name="countdownLabel"
+                                    className={styles.input}
+                                    placeholder="e.g., Days until Christmas"
+                                />
+                            </div>
+                        </>
                     )}
 
                     <div className={styles.formGroup}>

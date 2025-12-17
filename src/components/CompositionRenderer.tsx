@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { calculateMatrixCrop } from '../lib/matrix';
 import EffectsOverlay from './EffectsOverlay';
+import CountdownRenderer from './CountdownRenderer';
 
 interface CompositionRendererProps {
     data: string; // JSON string of the fabric canvas
@@ -15,11 +16,11 @@ interface CompositionRendererProps {
     totalCols?: number;
 }
 
-export default function CompositionRenderer({ 
-    data, 
-    width = 1920, 
-    height = 1080, 
-    matrixRow, 
+export default function CompositionRenderer({
+    data,
+    width = 1920,
+    height = 1080,
+    matrixRow,
     matrixCol,
     totalRows = 1,
     totalCols = 1,
@@ -71,21 +72,35 @@ export default function CompositionRenderer({
 
         const safeRender = () => {
             try {
-                if (isMounted.current && canvas.getElement()) {
+                if (isMounted.current && canvas && canvas.getElement() && canvas.getContext()) {
                     canvas.requestRenderAll();
                 }
             } catch (e) {
-                console.warn('safeRender error', e);
+                // Silently ignore render errors on disposed canvas
             }
         };
 
         if (data) {
             try {
                 const parsed = JSON.parse(data);
-                const objects = parsed.fabric || parsed;
+                let objects = parsed.fabric || parsed;
                 if (parsed.width) setCompWidth(parsed.width);
                 if (parsed.height) setCompHeight(parsed.height);
                 if (parsed.meta?.effect) setEffect(parsed.meta.effect);
+
+                // Convert relative URLs to absolute URLs for cross-device compatibility
+                if (objects && objects.objects && typeof window !== 'undefined') {
+                    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+                    objects = {
+                        ...objects,
+                        objects: objects.objects.map((obj: any) => {
+                            if (obj.type === 'image' && obj.src && obj.src.startsWith('/')) {
+                                return { ...obj, src: `${baseUrl}${obj.src}` };
+                            }
+                            return obj;
+                        })
+                    };
+                }
 
                 canvas.loadFromJSON(objects, () => {
                     if (isMounted.current) {
@@ -115,7 +130,7 @@ export default function CompositionRenderer({
             if (canvasRef.current && canvasRef.current.parentElement) {
                 try {
                     canvasRef.current.parentElement.removeChild(canvasRef.current);
-                } catch (e) {}
+                } catch (e) { }
             }
         };
     }, [data]);
@@ -136,7 +151,7 @@ export default function CompositionRenderer({
                 let logicalHeight = isMatrix ? compHeight / totalRows : compHeight;
 
                 const scale = Math.min(containerWidth / logicalWidth, containerHeight / logicalHeight);
-                
+
                 const scaledCompWidth = Math.round(compWidth * scale);
                 const scaledCompHeight = Math.round(compHeight * scale);
 
@@ -145,7 +160,7 @@ export default function CompositionRenderer({
 
                 const finalSectionWidth = Math.round(logicalWidth * scale);
                 const finalSectionHeight = Math.round(logicalHeight * scale);
-                
+
                 const offsetX = Math.round((containerWidth - finalSectionWidth) / 2);
                 const offsetY = Math.round((containerHeight - finalSectionHeight) / 2);
 
@@ -208,6 +223,26 @@ export default function CompositionRenderer({
         } catch (e) { }
     }, [data]);
 
+    const [countdowns, setCountdowns] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!data) return;
+        try {
+            const parsed = JSON.parse(data);
+            const objects = parsed.fabric?.objects || parsed.objects || [];
+            const cds = objects.filter((o: any) => o.isCountdown && o.countdownData).map((o: any) => ({
+                id: o.data?.id || Math.random().toString(),
+                countdownData: o.countdownData,
+                left: o.left,
+                top: o.top,
+                width: (o.width || 300) * (o.scaleX || 1),
+                height: (o.height || 100) * (o.scaleY || 1),
+                fontSize: o.fontSize || 60,
+            }));
+            setCountdowns(cds);
+        } catch (e) { }
+    }, [data]);
+
     return (
         <div
             ref={containerRef}
@@ -222,11 +257,11 @@ export default function CompositionRenderer({
                 position: 'relative'
             }}
         >
-            <div 
-                ref={canvasContainerRef} 
-                style={{ 
-                    position: 'relative', 
-                    width: finalWidth + 'px', 
+            <div
+                ref={canvasContainerRef}
+                style={{
+                    position: 'relative',
+                    width: finalWidth + 'px',
                     height: finalHeight + 'px',
                     overflow: 'hidden', // Always hide overflow for matrix and single view consistency
                 }}
@@ -236,9 +271,9 @@ export default function CompositionRenderer({
                 {webpages.map((wp, i) => {
                     const isInCrop = cropRegion
                         ? (wp.left < cropRegion.x + cropRegion.width &&
-                           wp.left + wp.width > cropRegion.x &&
-                           wp.top < cropRegion.y + cropRegion.height &&
-                           wp.top + wp.height > cropRegion.y)
+                            wp.left + wp.width > cropRegion.x &&
+                            wp.top < cropRegion.y + cropRegion.height &&
+                            wp.top + wp.height > cropRegion.y)
                         : true;
 
                     if (!isInCrop) return null;
@@ -263,6 +298,30 @@ export default function CompositionRenderer({
                                 pointerEvents: 'none'
                             }}
                         />
+                    );
+                })}
+
+                {countdowns.map((cd, i) => {
+                    const croppedLeft = (cropRegion ? cd.left - cropRegion.x : cd.left) * scaleInfo.scale;
+                    const croppedTop = (cropRegion ? cd.top - cropRegion.y : cd.top) * scaleInfo.scale;
+
+                    return (
+                        <div
+                            key={`countdown-${i}`}
+                            style={{
+                                position: 'absolute',
+                                left: (cropRegion ? 0 : scaleInfo.offsetX) + croppedLeft,
+                                top: (cropRegion ? 0 : scaleInfo.offsetY) + croppedTop,
+                                width: cd.width * scaleInfo.scale,
+                                height: cd.height * scaleInfo.scale,
+                                zIndex: 20,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <CountdownRenderer data={cd.countdownData} />
+                        </div>
                     );
                 })}
             </div>

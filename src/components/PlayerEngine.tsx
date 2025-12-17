@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getScreenConfig, updateScreenStatus } from '../app/actions/player';
 import styles from './player.module.css';
 import CompositionRenderer from './CompositionRenderer';
+import CountdownRenderer from './CountdownRenderer';
+import { ensureAbsoluteUrl } from '@/lib/url-utils';
 
 type PlayerProps = {
     screenId: string;
@@ -258,7 +260,7 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
         <div className={styles.playerContainer}>
             {content.type === 'IMAGE' && content.url && (
                 <img
-                    src={content.url}
+                    src={ensureAbsoluteUrl(content.url) || ''}
                     alt={content.name}
                     className={styles.media}
                 />
@@ -266,7 +268,7 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
 
             {content.type === 'VIDEO' && content.url && (
                 <video
-                    src={content.url}
+                    src={ensureAbsoluteUrl(content.url) || ''}
                     autoPlay
                     muted
                     loop
@@ -276,7 +278,7 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
 
             {content.type === 'WEBSITE' && content.url && (
                 <iframe
-                    src={content.url}
+                    src={ensureAbsoluteUrl(content.url) || ''}
                     className={styles.media}
                     sandbox="allow-scripts allow-same-origin"
                 />
@@ -297,6 +299,10 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
                     totalRows={config.totalRows ?? 1}
                     totalCols={config.totalCols ?? 1}
                 />
+            )}
+
+            {content.type === 'COUNTDOWN' && content.data && (
+                <CountdownRenderer data={content.data as string} />
             )}
         </div>
     );

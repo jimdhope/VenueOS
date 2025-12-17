@@ -66,7 +66,14 @@ export default function MediaPickerModal({ isOpen, onClose, onSelect, allowedTyp
                                 >
                                     <div style={{ aspectRatio: '16/9', overflow: 'hidden', marginBottom: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
                                         {item.type === 'IMAGE' && item.url ? (
-                                            <img src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img 
+                                                src={item.url.startsWith('http') ? item.url : item.url} 
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                onError={(e) => {
+                                                    console.error('Image failed to load:', item.url);
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                }}
+                                            />
                                         ) : item.type === 'VIDEO' ? (
                                             <span style={{ fontSize: '24px' }}>🎥</span>
                                         ) : (

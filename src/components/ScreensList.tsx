@@ -24,6 +24,7 @@ type ScreenWithDetails = {
         name: string;
         venue: { name: string };
     };
+    schedules: any[]; // Using any to avoid duplicating Schedule type for now, or explicit inline
 };
 
 type Space = {
