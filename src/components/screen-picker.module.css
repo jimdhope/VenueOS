@@ -1,0 +1,142 @@
+.main {
+    min-height: 100vh;
+    background: #0f0f0f;
+    color: #fff;
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.search {
+    background: #222;
+    border: 1px solid #333;
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+    width: 300px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search:focus {
+    border-color: #555;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+.venueSection {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.venueTitle {
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #666;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #222;
+    padding-bottom: 0.5rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.card:hover {
+    background: #252525;
+    transform: translateY(-2px);
+    border-color: #444;
+}
+
+.screenName {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.spaceName {
+    color: #888;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.cardArrow {
+    font-size: 1.5rem;
+    color: #444;
+    transition: color 0.2s;
+}
+
+.card:hover .cardArrow {
+    color: #fff;
+}
+
+.empty {
+    text-align: center;
+    padding: 4rem;
+    color: #444;
+    font-size: 1.2rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 600px) {
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search {
+        width: 100%;
+    }
+}

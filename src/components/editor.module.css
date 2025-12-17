@@ -1,0 +1,214 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.header {
+    margin-bottom: var(--space-8);
+}
+
+.breadcrumbs {
+    margin-bottom: var(--space-4);
+}
+
+.backLink {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 0;
+}
+
+.backLink:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+.title {
+    font-size: 2rem;
+    margin-bottom: var(--space-2);
+}
+
+.subtitle {
+    color: var(--text-secondary);
+}
+
+.sequenceHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.entriesList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.entryCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.entryOrder {
+    width: 30px;
+    height: 30px;
+    background: var(--bg-app);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.entryInfo {
+    flex: 1;
+}
+
+.entryInfo h4 {
+    margin-bottom: 2px;
+    color: var(--text-primary);
+}
+
+.entryType {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-app);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.entryControls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.durationControl {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.durationInput {
+    width: 60px;
+    padding: var(--space-2);
+    border: 1px solid var(--border);
+    background: var(--bg-app);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+.removeBtn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 var(--space-2);
+}
+
+.removeBtn:hover {
+    color: var(--danger);
+}
+
+.emptyState {
+    text-align: center;
+    padding: var(--space-12);
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+/* Modal */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+}
+
+.modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalHeader {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.contentGrid {
+    padding: var(--space-4);
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-3);
+}
+
+.contentSelectCard {
+    background: var(--bg-app);
+    border: 1px solid var(--border);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.contentSelectCard:hover {
+    border-color: var(--primary);
+    background: var(--bg-card-hover);
+}
+
+.contentSelectName {
+    font-weight: 500;
+    margin-bottom: 2px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contentSelectType {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}

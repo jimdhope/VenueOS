@@ -1,0 +1,12 @@
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main {
+    flex: 1;
+    padding: var(--space-8);
+    margin-left: 260px;
+    /* Sidebar width */
+    width: calc(100% - 260px);
+}
