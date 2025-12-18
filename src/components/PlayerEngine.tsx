@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getScreenConfig, updateScreenStatus } from '../app/actions/player';
 import styles from './player.module.css';
-import CompositionRenderer from './CompositionRenderer';
+import ClientOnlyCompositionRenderer from './ClientOnlyCompositionRenderer';
 import CountdownRenderer from './CountdownRenderer';
 import { ensureAbsoluteUrl } from '@/lib/url-utils';
 
@@ -292,7 +292,7 @@ export default function PlayerEngine({ screenId }: PlayerProps) {
             )}
 
             {content.type === 'COMPOSITION' && content.data && (
-                <CompositionRenderer
+                <ClientOnlyCompositionRenderer
                     data={content.data as string}
                     matrixRow={config.matrixRow ?? undefined}
                     matrixCol={config.matrixCol ?? undefined}
