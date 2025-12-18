@@ -212,7 +212,7 @@ export async function getContent() {
         const content = await prisma.content.findMany({
             orderBy: { updatedAt: 'desc' },
         });
-        console.log('DEBUG: getContent fetched content:', JSON.stringify(content.filter(c => c.type === 'COMPOSITION'), null, 2));
+        console.log('DEBUG: getContent fetched content:', JSON.stringify(content.filter(c => c.type === 'COMPOSITION').map(c => ({ id: c.id, name: c.name, data: c.data ? 'DATA_PRESENT' : 'DATA_NULL' })), null, 2));
         return content;
     } catch (err) {
         console.error('Failed to fetch content', err);
