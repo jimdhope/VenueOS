@@ -12,9 +12,24 @@ const CompositionPreview: React.FC<CompositionPreviewProps> = ({ data }) => {
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    let parsedData: any; // Declare without initializing to null
+
+    try {
+      parsedData = JSON.parse(data);
+    } catch (e) {
+      console.error("CompositionPreview: Failed to parse composition data:", e);
+      return;
+    }
+
+    // Now check if parsedData is valid and contains fabric data
+    if (!parsedData || !parsedData.fabric) {
+      console.log("CompositionPreview: No Fabric.js data found or invalid structure.");
+      return;
+    }
+
     // Extract original composition dimensions from parsedData
-    const originalWidth = parsedData.width || 1920; // Default to 1920 if not found
-    const originalHeight = parsedData.height || 1080; // Default to 1080 if not found
+    const originalWidth = parsedData.width || 1920; // Now parsedData is guaranteed to be an object
+    const originalHeight = parsedData.height || 1080; // Now parsedData is guaranteed to be an object
 
     // Initialize Fabric.js canvas with original dimensions
     const canvas = new fabric.Canvas(canvasRef.current, {
