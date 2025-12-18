@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import styles from './card-list.module.css';
-import CompositionPreview from './CompositionPreview'; // Import the new component
+import ClientOnlyCompositionPreview from './ClientOnlyCompositionPreview';
 
 type Content = {
     id: string;
@@ -86,7 +86,7 @@ export default function ContentList({
                                         {item.type === 'VIDEO' && <div className={styles.placeholder}>VIDEO</div>}
                                         {item.type === 'WEBSITE' && <div className={styles.placeholder}>WEB</div>}
                                         {item.type === 'MENU_HTML' && <div className={styles.placeholder}>HTML</div>}
-                                        {item.type === 'COMPOSITION' && item.data && <CompositionPreview data={item.data} />}
+                                        {item.type === 'COMPOSITION' && item.data && <ClientOnlyCompositionPreview data={item.data} />}
                                         {item.type === 'COMPOSITION' && !item.data && <div className={styles.placeholder}>🎨</div>}
 
                                     </div>
