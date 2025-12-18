@@ -8,15 +8,18 @@ const CompositionRenderer = dynamic(
 );
 
 interface ClientOnlyCompositionRendererProps {
-  composition: any; // Adjust type as needed
-  width: number;
-  height: number;
-  effect: 'none' | 'snow' | 'rain';
-  matrixPosition: { x: number; y: number; width: number; height: number };
+  data: string;
+  width?: number;
+  height?: number;
+  effect?: 'none' | 'snow' | 'rain';
+  matrixRow?: number;
+  matrixCol?: number;
+  totalRows?: number;
+  totalCols?: number;
 }
 
 const ClientOnlyCompositionRenderer: React.FC<ClientOnlyCompositionRendererProps> = (props) => {
-  return <CompositionRenderer {...props} />;
+  return <CompositionRenderer {...props} /> as any;
 };
 
 export default ClientOnlyCompositionRenderer;

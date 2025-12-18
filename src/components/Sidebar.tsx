@@ -71,13 +71,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           );
         })}
       </nav>
-      <div className={styles.user}>
-        <div className={styles.avatar}>J</div>
-        <div className={styles.info} style={{ opacity: collapsed ? 0 : 1 }}>
-          <p className={styles.name}>Jim</p>
-          <p className={styles.role}>Admin</p>
-        </div>
-      </div>
+      {/* user details removed — not a multi-user app */}
     </aside>
   );
 }

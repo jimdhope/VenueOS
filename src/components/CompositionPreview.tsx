@@ -9,6 +9,9 @@ const CompositionPreview: React.FC<CompositionPreviewProps> = ({ data }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
+  const previewWidth = 200;
+  const previewHeight = 150;
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       console.log("CompositionPreview: Running on server, skipping Fabric.js init.");
@@ -86,10 +89,6 @@ const CompositionPreview: React.FC<CompositionPreviewProps> = ({ data }) => {
 
     return () => clearTimeout(timeoutId); // Cleanup timeout if component unmounts
   }, [data, previewWidth, previewHeight]);
-
-  // Define a fixed size for the preview area to maintain consistency
-  const previewWidth = 200;
-  const previewHeight = 150;
 
   return (
     <div
