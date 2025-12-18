@@ -12,37 +12,35 @@ const CompositionPreview: React.FC<CompositionPreviewProps> = ({ data }) => {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Initialize Fabric.js canvas
+    // Extract original composition dimensions from parsedData
+    const originalWidth = parsedData.width || 1920; // Default to 1920 if not found
+    const originalHeight = parsedData.height || 1080; // Default to 1080 if not found
+
+    // Initialize Fabric.js canvas with original dimensions
     const canvas = new fabric.Canvas(canvasRef.current, {
       selection: false, // Disable selection for preview
       hoverCursor: 'pointer',
       isDrawingMode: false,
+      width: originalWidth,   // Set Fabric.js canvas width
+      height: originalHeight, // Set Fabric.js canvas height
     });
     fabricCanvasRef.current = canvas;
 
-    let parsedData: any = null;
-    try {
-      parsedData = JSON.parse(data);
-    } catch (e) {
-      console.error("CompositionPreview: Failed to parse composition data:", e);
-      return;
-    }
+    canvas.loadFromJSON(parsedData.fabric, () => {
+      // Calculate scale to fit content within preview dimensions
+      const scaleX = previewWidth / originalWidth;
+      const scaleY = previewHeight / originalHeight;
+      const scale = Math.min(scaleX, scaleY);
 
-    if (parsedData && parsedData.fabric) {
-      canvas.loadFromJSON(parsedData.fabric, () => {
-        canvas.renderAll();
-        // Optionally scale down the canvas content to fit the preview area
-        const scaleX = canvasRef.current!.width / canvas.width;
-        const scaleY = canvasRef.current!.height / canvas.height;
-        const scale = Math.min(scaleX, scaleY);
+      // Apply scaling and center the content
+      canvas.setZoom(scale);
+      // Calculate offset to center the scaled content
+      const viewportCenterX = (previewWidth - originalWidth * scale) / 2;
+      const viewportCenterY = (previewHeight - originalHeight * scale) / 2;
 
-        canvas.setZoom(scale);
-        canvas.viewportTransform = [scale, 0, 0, scale, 0, 0]; // Reset viewport transform
-        canvas.renderAll();
-      });
-    } else {
-      console.log("CompositionPreview: No Fabric.js data found in composition.");
-    }
+      canvas.viewportTransform = [scale, 0, 0, scale, viewportCenterX, viewportCenterY];
+      canvas.renderAll();
+    });
 
     return () => {
       canvas.dispose(); // Clean up Fabric.js canvas on unmount
