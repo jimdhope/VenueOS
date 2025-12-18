@@ -53,7 +53,7 @@ export async function createContent(prevState: any, formData: FormData) {
         type: formData.get('type'),
         url: (uploadedUrl || (!rawUrl || rawUrl === '' ? undefined : rawUrl)) as string | undefined,
         body: formData.get('body') || undefined,
-        data: formData.get('data') || undefined,
+        data: formData.get('data') as string | undefined | null,
         duration: formData.get('duration') === '' ? undefined : formData.get('duration'),
     };
     console.log('DEBUG: createContent rawData:', JSON.stringify(rawData, null, 2));
@@ -190,14 +190,33 @@ export async function updateContentAction(
 
 export async function deleteContent(id: string) {
     try {
+        // Remove any playlist entries that reference this content first to avoid FK constraint errors
+        await prisma.playlistEntry.deleteMany({ where: { contentId: id } });
+
         await prisma.content.delete({
             where: { id },
         });
+
         revalidatePath('/admin/layouts');
         revalidatePath('/admin/media');
         return { message: 'Content deleted.' };
     } catch (error) {
+        console.error('Failed to delete content:', error);
         return { message: 'Database Error: Failed to Delete Content.' };
+    }
+}
+
+
+export async function getContent() {
+    try {
+        const content = await prisma.content.findMany({
+            orderBy: { updatedAt: 'desc' },
+        });
+        console.log('DEBUG: getContent fetched content:', JSON.stringify(content.filter(c => c.type === 'COMPOSITION'), null, 2));
+        return content;
+    } catch (err) {
+        console.error('Failed to fetch content', err);
+        return [];
     }
 }
 
