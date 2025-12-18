@@ -10,7 +10,7 @@ const CompositionPreview: React.FC<CompositionPreviewProps> = ({ data }) => {
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (typeof window === 'undefined' || !canvasRef.current) return;
 
     let parsedData: any; // Declare without initializing to null
 
