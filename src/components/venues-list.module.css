@@ -1,0 +1,123 @@
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-8);
+}
+
+.title {
+    font-size: 2rem;
+    margin-bottom: var(--space-2);
+}
+
+.subtitle {
+    color: var(--text-secondary);
+}
+
+.grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.venueGroup {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.venueTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--space-2);
+    margin-bottom: var(--space-4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.spaceList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-4);
+}
+
+.spaceCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.spaceCard:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.spaceInfo h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.screenCount {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-app);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.actionBtn {
+    background: none;
+    border: none;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    transition: color 0.2s;
+}
+
+.actionBtn:hover {
+    color: var(--primary);
+    background: var(--bg-card-hover);
+}
+
+.danger:hover {
+    color: var(--danger);
+}
+
+.empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--space-12);
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+}

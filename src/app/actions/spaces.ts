@@ -78,6 +78,26 @@ export async function updateSpace(
     return { success: true, message: 'Space updated successfully.' };
 }
 
+
+export async function getSpacesPageData() {
+    try {
+        const [venues, spaces] = await Promise.all([
+            prisma.venue.findMany({ orderBy: { name: 'asc' } }),
+            prisma.space.findMany({
+                include: {
+                    venue: true,
+                    screens: true,
+                },
+                orderBy: { name: 'asc' },
+            }),
+        ]);
+        return { venues, spaces };
+    } catch (err) {
+        console.error('Failed to fetch spaces page data', err);
+        return { venues: [], spaces: [] };
+    }
+}
+
 export async function deleteSpace(id: string) {
     try {
         await prisma.space.delete({

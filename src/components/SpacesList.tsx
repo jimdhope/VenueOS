@@ -1,10 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import SpaceModal from '@/components/SpaceModal';
-import { deleteSpace } from '../app/actions/spaces';
-import styles from './spaces-list.module.css';
+import styles from './card-list.module.css';
 
 type SpaceWithDetails = {
     id: string;
@@ -14,40 +10,26 @@ type SpaceWithDetails = {
     screens: { id: string }[];
 };
 
-type Venue = {
-    id: string;
-    name: string;
+type SpacesListProps = {
+    initialSpaces: SpaceWithDetails[];
+    selectedIds: Set<string>;
+    setSelectedIds: (ids: Set<string>) => void;
+    onEdit: (space: SpaceWithDetails) => void;
+    onDelete: (id: string) => Promise<void>;
 };
 
-export default function SpacesList({
-    initialVenues,
-    initialSpaces,
-}: {
-    initialVenues: Venue[];
-    initialSpaces: SpaceWithDetails[];
-}) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedSpace, setSelectedSpace] = useState<SpaceWithDetails | null>(null);
-    const router = useRouter();
-
-    const handleCreate = () => {
-        setSelectedSpace(null);
-        setIsModalOpen(true);
-    };
-
-    const handleEdit = (space: SpaceWithDetails) => {
-        setSelectedSpace(space);
-        setIsModalOpen(true);
-    };
-
-    const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this space? This action cannot be undone.')) {
-            await deleteSpace(id);
-            try { router.refresh(); } catch (e) { /* ignore */ }
+export default function SpacesList({ initialSpaces, selectedIds, setSelectedIds, onEdit, onDelete }: SpacesListProps) {
+    
+    const toggleSelect = (id: string) => {
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
         }
+        setSelectedIds(newSet);
     };
 
-    // Group spaces by Venue
     const groupedSpaces = initialSpaces.reduce((acc, space) => {
         if (!acc[space.venue.name]) {
             acc[space.venue.name] = [];
@@ -58,62 +40,52 @@ export default function SpacesList({
 
     return (
         <>
-            <div className={styles.header}>
-                <div>
-                    <h1 className={styles.title}>Spaces</h1>
-                    <p className={styles.subtitle}>Manage physical locations and rooms</p>
-                </div>
-                <button onClick={handleCreate} className="btn btn-primary">
-                    + Add Space
-                </button>
-            </div>
-
-            <div className={styles.grid}>
-                {Object.entries(groupedSpaces).map(([venueName, spaces]) => (
-                    <div key={venueName} className={styles.venueGroup}>
-                        <h2 className={styles.venueTitle}>{venueName}</h2>
-                        <div className={styles.spaceList}>
-                            {spaces.map((space) => (
-                                <div key={space.id} className={styles.spaceCard}>
-                                    <div className={styles.spaceInfo}>
-                                        <h3>{space.name}</h3>
-                                        <span className={styles.screenCount}>
-                                            {space.screens.length} Screen{space.screens.length !== 1 ? 's' : ''}
-                                        </span>
+            {initialSpaces.length === 0 ? (
+                <div className={styles.empty}><p>No spaces found.</p></div>
+            ) : (
+                Object.entries(groupedSpaces).map(([groupName, spaces]) => (
+                    <div key={groupName} className={styles.groupSection}>
+                        <h2 className={styles.groupHeader}>{groupName}</h2>
+                        <div className={styles.grid}>
+                            {spaces.map((space) => {
+                                const isSelected = selectedIds.has(space.id);
+                                return (
+                                    <div
+                                        key={space.id}
+                                        className={styles.card}
+                                        style={{
+                                            opacity: isSelected ? 0.7 : 1,
+                                            backgroundColor: isSelected ? 'var(--bg-tertiary)' : undefined,
+                                            border: isSelected ? '2px solid var(--primary)' : undefined,
+                                        }}
+                                    >
+                                        <div className={styles.cardHeader}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => toggleSelect(space.id)}
+                                                style={{ marginTop: '2px', cursor: 'pointer' }}
+                                            />
+                                            <div style={{ flex: 1, marginLeft: '1rem' }}>
+                                                <h3 className={styles.cardTitle}>{space.name}</h3>
+                                            </div>
+                                        </div>
+                                        <div className={styles.cardContent}>
+                                            <span className={styles.screenCount}>
+                                                {space.screens.length} Screen{space.screens.length !== 1 ? 's' : ''}
+                                            </span>
+                                        </div>
+                                        <div className={styles.actions}>
+                                            <button onClick={() => onEdit(space)} className={styles.actionBtn}>Edit</button>
+                                            <button onClick={() => onDelete(space.id)} className={`${styles.actionBtn} ${styles.danger}`}>Delete</button>
+                                        </div>
                                     </div>
-                                    <div className={styles.actions}>
-                                        <button
-                                            onClick={() => handleEdit(space)}
-                                            className={styles.actionBtn}
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(space.id)}
-                                            className={`${styles.actionBtn} ${styles.danger}`}
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
-                ))}
-
-                {initialVenues.length === 0 && (
-                    <div className={styles.empty}>
-                        <p>No venues found. Please seed the database.</p>
-                    </div>
-                )}
-            </div>
-
-            <SpaceModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                space={selectedSpace}
-                venues={initialVenues}
-            />
+                ))
+            )}
         </>
     );
 }

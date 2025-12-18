@@ -150,22 +150,28 @@
 
 .actionBtn {
     background: none;
-    border: none;
-    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     cursor: pointer;
     font-size: 0.85rem;
-    padding: 4px 8px;
+    padding: 0.5rem 1rem;
     border-radius: 4px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .actionBtn:hover {
     background: var(--bg-card-hover);
+    border-color: var(--primary);
     color: var(--primary);
 }
 
 .actionBtn.danger:hover {
     color: var(--danger);
     background: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
 }
 
 .empty {

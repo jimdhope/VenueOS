@@ -70,11 +70,30 @@ export default function ScreenSchedulesManager({ screenId, schedules, playlists 
         <div className={styles.container}>
             <div className={styles.header}>
                 <h3>Active Schedules</h3>
-                {!isAdding && (
-                    <button onClick={() => setIsAdding(true)} className="btn btn-sm btn-primary">
-                        + Add Rule
-                    </button>
-                )}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {!isAdding && (
+                        <>
+                            <a 
+                                href={`/admin/schedules?screen=${screenId}`}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    backgroundColor: '#666',
+                                    color: 'white',
+                                    textDecoration: 'none',
+                                    borderRadius: '4px',
+                                    fontSize: '0.875rem',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                View All Rules
+                            </a>
+                            <button onClick={() => setIsAdding(true)} className="btn btn-sm btn-primary">
+                                + Add Rule
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
             {isAdding && (

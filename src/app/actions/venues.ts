@@ -69,6 +69,20 @@ export async function deleteVenue(id: string) {
     }
 }
 
+
+export async function getVenuesWithCount() {
+    try {
+        const venues = await prisma.venue.findMany({
+            include: { _count: { select: { spaces: true } } },
+            orderBy: { name: 'asc' },
+        });
+        return venues;
+    } catch (err) {
+        console.error('Failed to fetch venues', err);
+        return [];
+    }
+}
+
 export async function getVenues() {
     try {
         const venues = await prisma.venue.findMany({ orderBy: { name: 'asc' } });

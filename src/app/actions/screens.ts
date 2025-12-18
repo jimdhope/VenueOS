@@ -200,6 +200,49 @@ export async function updateScreen(
     return { success: true, message: 'Screen updated successfully.' };
 }
 
+
+export async function getScreensPageData() {
+    try {
+        const [screens, spaces, playlists, timecodes] = await Promise.all([
+            prisma.screen.findMany({
+                include: {
+                    space: {
+                        include: {
+                            venue: true,
+                        },
+                    },
+                    playlist: true,
+                    schedules: {
+                        include: {
+                            playlist: true,
+                        },
+                        orderBy: {
+                            priority: 'desc',
+                        },
+                    },
+                },
+                orderBy: { name: 'asc' },
+            }),
+            prisma.space.findMany({
+                include: {
+                    venue: true,
+                },
+                orderBy: { venue: { name: 'asc' } },
+            }),
+            prisma.playlist.findMany({
+                orderBy: { name: 'asc' },
+            }),
+            prisma.timecode.findMany({
+                orderBy: { name: 'asc' },
+            }),
+        ]);
+        return { screens, spaces, playlists, timecodes };
+    } catch (err) {
+        console.error('Failed to fetch screens page data', err);
+        return { screens: [], spaces: [], playlists: [], timecodes: [] };
+    }
+}
+
 export async function deleteScreen(id: string) {
     try {
         await prisma.screen.delete({

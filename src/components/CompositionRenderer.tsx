@@ -89,15 +89,17 @@ export default function CompositionRenderer({
                 if (parsed.meta?.effect) setEffect(parsed.meta.effect);
 
                 // Convert relative URLs to absolute URLs for cross-device compatibility
+                // Hide countdown text objects (set opacity to 0) since they're rendered separately via CountdownRenderer
                 if (objects && objects.objects && typeof window !== 'undefined') {
                     const baseUrl = `${window.location.protocol}//${window.location.host}`;
                     objects = {
                         ...objects,
                         objects: objects.objects.map((obj: any) => {
+                            let updatedObj = obj;
                             if (obj.type === 'image' && obj.src && obj.src.startsWith('/')) {
-                                return { ...obj, src: `${baseUrl}${obj.src}` };
+                                updatedObj = { ...obj, src: `${baseUrl}${obj.src}` };
                             }
-                            return obj;
+                            return updatedObj;
                         })
                     };
                 }
@@ -109,9 +111,10 @@ export default function CompositionRenderer({
                     }
                 });
 
-                setTimeout(safeRender, 100);
-                setTimeout(safeRender, 500);
-                setTimeout(safeRender, 1000);
+                // Only schedule renders if still mounted
+                const timeout1 = setTimeout(() => isMounted.current && safeRender(), 100);
+                const timeout2 = setTimeout(() => isMounted.current && safeRender(), 500);
+                const timeout3 = setTimeout(() => isMounted.current && safeRender(), 1000);
             } catch (e) {
                 console.error('Failed to parse composition data', e);
             }
@@ -138,48 +141,68 @@ export default function CompositionRenderer({
     useEffect(() => {
         if (!fabricCanvas || !containerRef.current) return;
 
+        let resizeTimeout: NodeJS.Timeout | null = null;
+        let rafId: number | null = null;
+
         const handleResize = () => {
-            try {
-                if (!containerRef.current || !isMounted.current || !fabricCanvas.getContext()) return;
+            // Debounce resize handling (250ms)
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            
+            resizeTimeout = setTimeout(() => {
+                try {
+                    if (!containerRef.current || !isMounted.current || !fabricCanvas.getContext()) return;
 
-                const containerWidth = containerRef.current.clientWidth;
-                const containerHeight = containerRef.current.clientHeight;
+                    const containerWidth = containerRef.current.clientWidth;
+                    const containerHeight = containerRef.current.clientHeight;
 
-                const isMatrix = matrixRow != null && matrixCol != null && (totalRows > 1 || totalCols > 1);
+                    const isMatrix = matrixRow != null && matrixCol != null && (totalRows > 1 || totalCols > 1);
 
-                let logicalWidth = isMatrix ? compWidth / totalCols : compWidth;
-                let logicalHeight = isMatrix ? compHeight / totalRows : compHeight;
+                    let logicalWidth = isMatrix ? compWidth / totalCols : compWidth;
+                    let logicalHeight = isMatrix ? compHeight / totalRows : compHeight;
 
-                const scale = Math.min(containerWidth / logicalWidth, containerHeight / logicalHeight);
+                    const scale = Math.min(containerWidth / logicalWidth, containerHeight / logicalHeight);
 
-                const scaledCompWidth = Math.round(compWidth * scale);
-                const scaledCompHeight = Math.round(compHeight * scale);
+                    const scaledCompWidth = Math.round(compWidth * scale);
+                    const scaledCompHeight = Math.round(compHeight * scale);
 
-                fabricCanvas.setDimensions({ width: scaledCompWidth, height: scaledCompHeight });
-                fabricCanvas.setZoom(scale);
+                    fabricCanvas.setDimensions({ width: scaledCompWidth, height: scaledCompHeight });
+                    fabricCanvas.setZoom(scale);
 
-                const finalSectionWidth = Math.round(logicalWidth * scale);
-                const finalSectionHeight = Math.round(logicalHeight * scale);
+                    const finalSectionWidth = Math.round(logicalWidth * scale);
+                    const finalSectionHeight = Math.round(logicalHeight * scale);
 
-                const offsetX = Math.round((containerWidth - finalSectionWidth) / 2);
-                const offsetY = Math.round((containerHeight - finalSectionHeight) / 2);
+                    const offsetX = Math.round((containerWidth - finalSectionWidth) / 2);
+                    const offsetY = Math.round((containerHeight - finalSectionHeight) / 2);
 
-                setFinalWidth(finalSectionWidth);
-                setFinalHeight(finalSectionHeight);
-                setScaleInfo({ scale, offsetX, offsetY });
+                    setFinalWidth(finalSectionWidth);
+                    setFinalHeight(finalSectionHeight);
+                    setScaleInfo({ scale, offsetX, offsetY });
 
-                if (isMounted.current && fabricCanvas.getContext()) {
-                    fabricCanvas.requestRenderAll();
+                    // Use requestAnimationFrame for smooth rendering
+                    if (rafId) cancelAnimationFrame(rafId);
+                    rafId = requestAnimationFrame(() => {
+                        if (isMounted.current && fabricCanvas.getContext()) {
+                            try {
+                                fabricCanvas.requestRenderAll();
+                            } catch (e) {
+                                // Silently ignore
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.warn('handleResize error', e);
                 }
-            } catch (e) {
-                console.warn('handleResize error', e);
-            }
+            }, 250);
         };
 
         window.addEventListener('resize', handleResize);
         handleResize();
 
-        return () => window.removeEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            if (rafId) cancelAnimationFrame(rafId);
+        };
     }, [fabricCanvas, compWidth, compHeight, matrixRow, matrixCol, totalRows, totalCols]);
 
     useEffect(() => {
@@ -243,6 +266,136 @@ export default function CompositionRenderer({
         } catch (e) { }
     }, [data]);
 
+    // Helper to calculate countdown text from config
+    const getCountdownText = (config: any): string => {
+        const target = new Date(config.targetDate);
+        const now = new Date();
+        const diff = target.getTime() - now.getTime();
+
+        if (diff <= 0) return '🎉 Now! 🎉';
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        const totalHours = Math.floor(totalMinutes / 60);
+        const totalDays = Math.floor(totalHours / 24);
+        const totalMonths = Math.floor(totalDays / 30.44);
+        const totalYears = Math.floor(totalDays / 365.25);
+
+        const parts: string[] = [];
+        const hideLabels = config.hideLabels || false;
+
+        const hasUnitFlags = config.showYears !== undefined ||
+            config.showMonths !== undefined ||
+            config.showDays !== undefined ||
+            config.showHours !== undefined ||
+            config.showMinutes !== undefined ||
+            config.showSeconds !== undefined;
+
+        if (hasUnitFlags) {
+            if (config.showYears) {
+                parts.push(hideLabels ? `${totalYears}` : `${totalYears} ${totalYears === 1 ? 'year' : 'years'}`);
+            }
+            if (config.showMonths) {
+                const months = config.showYears ? Math.floor((totalDays % 365.25) / 30.44) : totalMonths;
+                parts.push(hideLabels ? `${months}` : `${months} ${months === 1 ? 'month' : 'months'}`);
+            }
+            if (config.showDays) {
+                let days = totalDays;
+                if (config.showYears) days = Math.floor(totalDays % 365.25);
+                if (config.showMonths && !config.showYears) days = Math.floor(totalDays % 30.44);
+                if (config.showMonths && config.showYears) days = Math.floor((totalDays % 365.25) % 30.44);
+                parts.push(hideLabels ? `${days}` : `${days} ${days === 1 ? 'day' : 'days'}`);
+            }
+            if (config.showHours) {
+                const hours = totalHours % 24;
+                parts.push(hideLabels ? `${hours}` : `${hours} ${hours === 1 ? 'hour' : 'hours'}`);
+            }
+            if (config.showMinutes) {
+                const minutes = totalMinutes % 60;
+                parts.push(hideLabels ? `${minutes}` : `${minutes} ${minutes === 1 ? 'min' : 'mins'}`);
+            }
+            if (config.showSeconds) {
+                const seconds = totalSeconds % 60;
+                parts.push(hideLabels ? `${seconds}` : `${seconds} ${seconds === 1 ? 'sec' : 'secs'}`);
+            }
+
+            if (parts.length === 0) {
+                parts.push(hideLabels ? `${totalDays}` : `${totalDays} ${totalDays === 1 ? 'day' : 'days'}`);
+            }
+        } else {
+            switch (config.displayFormat) {
+                case 'days':
+                    parts.push(`${totalDays} ${totalDays === 1 ? 'day' : 'days'}`);
+                    break;
+                case 'hours':
+                    parts.push(`${totalHours} ${totalHours === 1 ? 'hour' : 'hours'}`);
+                    break;
+                case 'minutes':
+                    parts.push(`${totalMinutes} ${totalMinutes === 1 ? 'minute' : 'minutes'}`);
+                    break;
+                case 'seconds':
+                    parts.push(`${totalSeconds} ${totalSeconds === 1 ? 'second' : 'seconds'}`);
+                    break;
+                case 'dhm':
+                    parts.push(`${totalDays}d ${totalHours % 24}h ${totalMinutes % 60}m`);
+                    break;
+                case 'hms':
+                    parts.push(`${String(totalHours).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:${String(totalSeconds % 60).padStart(2, '0')}`);
+                    break;
+                case 'full':
+                default:
+                    parts.push(`${totalDays}d ${totalHours % 24}h ${totalMinutes % 60}m ${totalSeconds % 60}s`);
+                    break;
+            }
+        }
+
+        return parts.join(' ');
+    };
+
+    // Update countdown text in fabric canvas every second (optimized to only update if text changed)
+    useEffect(() => {
+        if (!fabricCanvas) return;
+
+        let lastCountdownTexts: Map<string, string> = new Map();
+
+        const updateCountdowns = () => {
+            try {
+                if (!isMounted.current || !fabricCanvas.getContext()) return;
+
+                let shouldRender = false;
+
+                fabricCanvas.forEachObject((obj: any) => {
+                    if (obj.isCountdown && obj.countdownData) {
+                        try {
+                            const config = JSON.parse(obj.countdownData);
+                            const newText = getCountdownText(config);
+                            const objId = obj.data?.id || obj.text;
+                            const lastText = lastCountdownTexts.get(objId);
+
+                            // Only update if text changed
+                            if (newText !== lastText) {
+                                (obj as any).text = newText;
+                                lastCountdownTexts.set(objId, newText);
+                                shouldRender = true;
+                            }
+                        } catch (e) { }
+                    }
+                });
+
+                // Only render if something actually changed
+                if (shouldRender && isMounted.current && fabricCanvas.getContext()) {
+                    fabricCanvas.requestRenderAll();
+                }
+            } catch (e) {
+                // Silently ignore errors if canvas is disposed
+            }
+        };
+
+        updateCountdowns(); // Initial update
+        const interval = setInterval(updateCountdowns, 1000);
+        return () => clearInterval(interval);
+    }, [fabricCanvas]);
+
     return (
         <div
             ref={containerRef}
@@ -298,30 +451,6 @@ export default function CompositionRenderer({
                                 pointerEvents: 'none'
                             }}
                         />
-                    );
-                })}
-
-                {countdowns.map((cd, i) => {
-                    const croppedLeft = (cropRegion ? cd.left - cropRegion.x : cd.left) * scaleInfo.scale;
-                    const croppedTop = (cropRegion ? cd.top - cropRegion.y : cd.top) * scaleInfo.scale;
-
-                    return (
-                        <div
-                            key={`countdown-${i}`}
-                            style={{
-                                position: 'absolute',
-                                left: (cropRegion ? 0 : scaleInfo.offsetX) + croppedLeft,
-                                top: (cropRegion ? 0 : scaleInfo.offsetY) + croppedTop,
-                                width: cd.width * scaleInfo.scale,
-                                height: cd.height * scaleInfo.scale,
-                                zIndex: 20,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <CountdownRenderer data={cd.countdownData} />
-                        </div>
                     );
                 })}
             </div>

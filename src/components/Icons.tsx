@@ -66,6 +66,12 @@ export const Icons = {
             <line x1="3" y1="18" x2="3.01" y2="18"></line>
         </svg>
     ),
+    Diagnostics: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9"></circle>
+            <polyline points="12 7 12 13 16 15"></polyline>
+        </svg>
+    ),
     Logo: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#2563eb' }}>
             <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>

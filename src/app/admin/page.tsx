@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { isScreenOnline, timeAgo } from '@/lib/utils';
 import styles from './page.module.css';
+import AdminPageLayout from '@/components/AdminPageLayout';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,12 +34,7 @@ export default async function AdminDashboard() {
     const onlineScreens = screens.filter(s => isScreenOnline(s.updatedAt)).length;
 
     return (
-        <div className={styles.container}>
-            <header className={styles.header}>
-                <h1 className={styles.title}>Dashboard Overview</h1>
-                <p className={styles.subtitle}>System status and quick access</p>
-            </header>
-
+        <AdminPageLayout title="Dashboard">
             {/* Main Stats Row */}
             <div className={styles.statsGrid}>
                 <div className={styles.statCard}>
@@ -140,6 +136,6 @@ export default async function AdminDashboard() {
                     </section>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

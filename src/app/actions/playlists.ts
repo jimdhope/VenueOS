@@ -153,6 +153,24 @@ export async function updateEntryDuration(
     }
 }
 
+
+export async function getPlaylists() {
+    try {
+        const playlists = await prisma.playlist.findMany({
+            include: {
+                _count: {
+                    select: { entries: true, screens: true },
+                },
+            },
+            orderBy: { updatedAt: 'desc' },
+        });
+        return playlists;
+    } catch (err) {
+        console.error('Failed to fetch playlists', err);
+        return [];
+    }
+}
+
 export async function reorderEntries(
     playlistId: string,
     orderedEntryIds: string[]

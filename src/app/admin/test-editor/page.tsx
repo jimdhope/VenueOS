@@ -1,14 +1,22 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { fabric } from 'fabric';
+import React, { useEffect, useRef, useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 
-export default function TestEditorPage() {
+const FabricEditor = () => {
+    const [fabric, setFabric] = useState<any>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
+    const [fabricCanvas, setFabricCanvas] = useState<any>(null);
 
     useEffect(() => {
-        if (canvasRef.current && !fabricCanvas) {
+        // Dynamically import fabric only on client
+        import('fabric').then(module => {
+            setFabric(module.fabric);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (canvasRef.current && !fabricCanvas && fabric) {
             const canvas = new fabric.Canvas(canvasRef.current, {
                 width: 1280,
                 height: 720,
@@ -16,15 +24,14 @@ export default function TestEditorPage() {
             });
             setFabricCanvas(canvas);
 
-            // Cleanup
             return () => {
                 canvas.dispose();
             };
         }
-    }, [canvasRef.current]);
+    }, [canvasRef.current, fabric]);
 
     const addRect = () => {
-        if (!fabricCanvas) return;
+        if (!fabricCanvas || !fabric) return;
         const rect = new fabric.Rect({
             left: 100,
             top: 100,
@@ -36,7 +43,7 @@ export default function TestEditorPage() {
     };
 
     const addText = () => {
-        if (!fabricCanvas) return;
+        if (!fabricCanvas || !fabric) return;
         const text = new fabric.IText('Hello World', {
             left: 200,
             top: 200,
@@ -66,4 +73,8 @@ export default function TestEditorPage() {
             </div>
         </div>
     );
+};
+
+export default function TestEditorPage() {
+    return <FabricEditor />;
 }

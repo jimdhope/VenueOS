@@ -26,7 +26,9 @@ export async function getScreenConfig(screenId: string) {
         }
 
         // 2. Resolve Active Playlist ID
-        let activePlaylistId = screenBase.playlistId;
+        // NOTE: screens no longer carry an "assigned playlist" by design; schedules determine what plays.
+        // Default to null and only set when a schedule matches.
+        let activePlaylistId: string | null = null;
         let activeScheduleName = null;
 
         const now = new Date();

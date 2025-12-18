@@ -10,10 +10,12 @@ const navItems = [
   { label: 'Venues', path: '/admin/venues', icon: 'Venues' },
   { label: 'Spaces', path: '/admin/spaces', icon: 'Spaces' },
   { label: 'Screens', path: '/admin/screens', icon: 'Screens' },
+  { label: 'Schedules', path: '/admin/schedules', icon: 'Playlists' },
   { label: 'Timecodes', path: '/admin/timecodes', icon: 'Timecodes' },
   { label: 'Layouts', path: '/admin/layouts', icon: 'Layouts' },
   { label: 'Media', path: '/admin/media', icon: 'Media' },
   { label: 'Playlists', path: '/admin/playlists', icon: 'Playlists' },
+  { label: 'Diagnostics', path: '/admin/diagnostics', icon: 'Diagnostics' },
 ];
 
 interface SidebarProps {

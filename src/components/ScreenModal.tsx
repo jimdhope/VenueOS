@@ -5,8 +5,6 @@ import { useFormStatus } from 'react-dom';
 import { createScreen, updateScreen } from '../app/actions/screens';
 import styles from './modal.module.css';
 
-import ScreenSchedulesManager from './ScreenSchedulesManager';
-
 type Space = {
     id: string;
     name: string;
@@ -60,12 +58,10 @@ export default function ScreenModal({ isOpen, onClose, screen, spaces, playlists
     const [resolutionOption, setResolutionOption] = useState<'1080p' | '4k' | 'other'>('1080p');
     const [customWidth, setCustomWidth] = useState<number | ''>('');
     const [customHeight, setCustomHeight] = useState<number | ''>('');
-    const [activeTab, setActiveTab] = useState<'settings' | 'schedules'>('settings');
 
     useEffect(() => {
         if (isOpen) {
             setState({});
-            setActiveTab('settings');
         }
     }, [isOpen]);
 
@@ -123,25 +119,7 @@ export default function ScreenModal({ isOpen, onClose, screen, spaces, playlists
                     <button onClick={onClose} className={styles.closeBtn}>&times;</button>
                 </div>
 
-                {isEditing && (
-                    <div className={styles.tabs}>
-                        <button
-                            className={`${styles.tab} ${activeTab === 'settings' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveTab('settings')}
-                        >
-                            General Settings
-                        </button>
-                        <button
-                            className={`${styles.tab} ${activeTab === 'schedules' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveTab('schedules')}
-                        >
-                            Schedules
-                        </button>
-                    </div>
-                )}
-
-                {activeTab === 'settings' ? (
-                    <form
+                <form
                         action={async (formData) => {
                             const result = await action(state, formData);
                             if (result.success) {
@@ -186,24 +164,6 @@ export default function ScreenModal({ isOpen, onClose, screen, spaces, playlists
                                 ))}
                             </select>
                             {state.errors?.spaceId && <p className={styles.error}>{state.errors.spaceId}</p>}
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label htmlFor="playlistId">Assigned Playlist (Default)</label>
-                            <select
-                                id="playlistId"
-                                name="playlistId"
-                                defaultValue={screen?.playlistId || ''}
-                                className={styles.select}
-                            >
-                                <option value="">No Playlist (Idle)</option>
-                                {playlists.map((playlist) => (
-                                    <option key={playlist.id} value={playlist.id}>
-                                        {playlist.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <small style={{ color: '#71717a' }}>This playlist runs when no schedule is active.</small>
                         </div>
 
                         <div className={styles.formGroup}>
@@ -323,14 +283,8 @@ export default function ScreenModal({ isOpen, onClose, screen, spaces, playlists
                             <SubmitButton isEditing={isEditing} />
                         </div>
                     </form>
-                ) : (
-                    <ScreenSchedulesManager
-                        screenId={screen!.id}
-                        schedules={screen!.schedules || []}
-                        playlists={playlists}
-                    />
-                )}
+                </div>
             </div>
-        </div>
-    );
-}
+        );
+
+    }

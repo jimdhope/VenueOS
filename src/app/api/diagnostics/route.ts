@@ -25,13 +25,21 @@ export async function GET() {
 
         // Check uploads directory
         const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-        let uploadedFiles: string[] = [];
+        let uploadedFiles: Array<{ name: string; size: number }> = [];
         let uploadsDirExists = false;
         
         try {
             uploadsDirExists = fs.existsSync(uploadsDir);
             if (uploadsDirExists) {
-                uploadedFiles = fs.readdirSync(uploadsDir);
+                const files = fs.readdirSync(uploadsDir);
+                uploadedFiles = files.map(file => {
+                    const filePath = path.join(uploadsDir, file);
+                    const stats = fs.statSync(filePath);
+                    return {
+                        name: file,
+                        size: stats.size
+                    };
+                });
             }
         } catch (e) {
             console.error('Error reading uploads directory:', e);

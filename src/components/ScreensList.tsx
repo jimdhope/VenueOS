@@ -1,71 +1,35 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import ScreenModal from '@/components/ScreenModal';
-import LinkModal from '@/components/LinkModal';
-import { deleteScreen } from '../app/actions/screens';
+import { useMemo } from 'react';
 import { isScreenOnline, timeAgo } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
-import styles from './screens-list.module.css';
+import styles from './card-list.module.css';
 
-type ScreenWithDetails = {
-    id: string;
-    name: string;
-    resolution: string | null;
-    orientation: string;
-    status: string;
-    updatedAt: Date;
-    spaceId: string;
-    playlistId: string | null;
-    matrixRow: number | null;
-    matrixCol: number | null;
-    timecodeId: string | null;
-    space: {
-        name: string;
-        venue: { name: string };
-    };
-    schedules: any[]; // Using any to avoid duplicating Schedule type for now, or explicit inline
-};
-
-type Space = {
-    id: string;
-    name: string;
-    venue: { name: string };
-};
-
-type Playlist = {
-    id: string;
-    name: string;
-};
-
-type Timecode = {
-    id: string;
-    name: string;
-};
+type ScreenWithDetails = any; // Simplified for brevity
+type ActiveSchedule = any;
 
 type Params = {
     initialScreens: ScreenWithDetails[];
-    initialSpaces: Space[];
-    playlists: Playlist[];
-    timecodes: Timecode[];
+    activeSchedules?: Record<string, ActiveSchedule>;
+    selectedIds: Set<string>;
+    setSelectedIds: (ids: Set<string>) => void;
+    search: string;
+    onEdit: (screen: ScreenWithDetails) => void;
+    onGetLink: (screen: ScreenWithDetails) => void;
+    onSchedule: (screen: ScreenWithDetails) => void;
+    onDelete: (id: string) => Promise<void>;
 };
 
-export default function ScreensList({ initialScreens, initialSpaces, playlists, timecodes }: Params) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedScreen, setSelectedScreen] = useState<ScreenWithDetails | null>(null);
-    const [linkModalScreen, setLinkModalScreen] = useState<ScreenWithDetails | null>(null);
-    const [search, setSearch] = useState('');
-    const [now, setNow] = useState(new Date());
-    const router = useRouter();
-
-    // Poll for updates every 10 seconds
-    useEffect(() => {
-        const interval = setInterval(() => {
-            router.refresh();
-            setNow(new Date());
-        }, 10000);
-        return () => clearInterval(interval);
-    }, [router]);
+export default function ScreensList({
+    initialScreens,
+    activeSchedules = {},
+    selectedIds,
+    setSelectedIds,
+    search,
+    onEdit,
+    onGetLink,
+    onSchedule,
+    onDelete,
+}: Params) {
 
     // Filter and Group Screens
     const groupedScreens = useMemo(() => {
@@ -85,128 +49,120 @@ export default function ScreensList({ initialScreens, initialSpaces, playlists, 
             groups[groupKey].push(screen);
         });
 
-        // Sort grouping keys alphabetically
         return Object.keys(groups).sort().reduce((acc, key) => {
-            // Sort screens within venue by Space Name, then Screen Name
             acc[key] = groups[key].sort((a, b) => a.name.localeCompare(b.name));
             return acc;
         }, {} as Record<string, ScreenWithDetails[]>);
 
     }, [initialScreens, search]);
 
-    const handleCreate = () => {
-        setSelectedScreen(null);
-        setIsModalOpen(true);
-    };
-
-    const handleEdit = (screen: ScreenWithDetails) => {
-        setSelectedScreen(screen);
-        setIsModalOpen(true);
-    };
-
-    const handleGetLink = (screen: ScreenWithDetails) => {
-        setLinkModalScreen(screen);
-    };
-
-    const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this screen?')) {
-            await deleteScreen(id);
+    const toggleSelect = (id: string) => {
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
         }
+        setSelectedIds(newSet);
     };
 
     return (
         <>
-            <div className={styles.header}>
-                <div>
-                    <h1 className={styles.title}>Screens</h1>
-                    <p className={styles.subtitle}>Manage digital display endpoints</p>
+            {Object.keys(groupedScreens).length === 0 ? (
+                <div className={styles.empty}>
+                    <p>{search ? 'No screens match your search.' : 'No screens found. Add one to get started.'}</p>
                 </div>
+            ) : (
+                Object.entries(groupedScreens).map(([groupName, screens]) => (
+                    <div key={groupName} className={styles.groupSection}>
+                        <h2 className={styles.groupHeader}>{groupName}</h2>
+                        <div className={styles.grid}>
+                            {screens.map((screen) => {
+                                const isOnline = isScreenOnline(screen.updatedAt);
+                                const statusLabel = isOnline ? 'ONLINE' : 'OFFLINE';
+                                const isSelected = selectedIds.has(screen.id);
+                                const activeSchedule = activeSchedules[screen.id];
 
-                <div className={styles.controls}>
-                    <input
-                        type="text"
-                        placeholder="Search screens, locations..."
-                        className={styles.search}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                    <button onClick={handleCreate} className="btn btn-primary">
-                        + Add Screen
-                    </button>
-                </div>
-            </div>
-
-            <div className={styles.content}>
-                {Object.keys(groupedScreens).length === 0 ? (
-                    <div className={styles.empty}>
-                        <p>{search ? 'No screens match your search.' : 'No screens found. Add one to get started.'}</p>
-                    </div>
-                ) : (
-                    Object.entries(groupedScreens).map(([venueName, screens]) => (
-                        <div key={venueName} className={styles.venueSection}>
-                            <h2 className={styles.venueHeader}>{venueName}</h2>
-                            <div className={styles.grid}>
-                                {screens.map((screen) => {
-                                    const isOnline = isScreenOnline(screen.updatedAt);
-                                    const statusLabel = isOnline ? 'ONLINE' : 'OFFLINE';
-
-                                    return (
-                                        <div key={screen.id} className={styles.card}>
-                                            <div className={styles.cardHeader}>
-                                                <div className={styles.statusBadge} data-status={statusLabel}>
-                                                    <div className={styles.statusDot} />
-                                                    <span suppressHydrationWarning>{statusLabel} ({timeAgo(screen.updatedAt)})</span>
-                                                </div>
-                                                <div className={styles.actions}>
-                                                    <button onClick={() => handleGetLink(screen)} className={styles.actionBtn}>
-                                                        Link
-                                                    </button>
-                                                    <button onClick={() => handleEdit(screen)} className={styles.actionBtn}>
-                                                        Edit
-                                                    </button>
-                                                    <button onClick={() => handleDelete(screen.id)} className={`${styles.actionBtn} ${styles.danger}`}>
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <h3 className={styles.screenName}>{screen.name}</h3>
-
-                                            <div className={styles.meta}>
-                                                <div className={styles.metaItem}>
-                                                    <span className={styles.label}>Resolution</span>
-                                                    <span className={styles.value}>{screen.resolution || 'N/A'}</span>
-                                                </div>
-                                                <div className={styles.metaItem}>
-                                                    <span className={styles.label}>Orientation</span>
-                                                    <span className={styles.value}>{screen.orientation}</span>
+                                return (
+                                    <div
+                                        key={screen.id}
+                                        className={styles.card}
+                                        style={{
+                                            opacity: isSelected ? 0.7 : 1,
+                                            backgroundColor: isSelected ? 'var(--bg-tertiary)' : undefined,
+                                            border: isSelected ? '2px solid var(--primary)' : undefined,
+                                        }}
+                                    >
+                                        <div className={styles.cardHeader}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => toggleSelect(screen.id)}
+                                                style={{ marginTop: '2px', cursor: 'pointer' }}
+                                            />
+                                            <div style={{ flex: 1, marginLeft: '1rem' }}>
+                                                <h3 className={styles.cardTitle}>{screen.name}</h3>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                                    📍 {screen.space.name}
                                                 </div>
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
+
+                                        <div className={styles.cardContent}>
+                                            <div style={{
+                                                padding: '0.75rem 1rem',
+                                                backgroundColor: activeSchedule
+                                                    ? 'rgba(74, 222, 128, 0.1)'
+                                                    : isOnline ? 'rgba(96, 165, 250, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                border: `1px solid ${activeSchedule
+                                                    ? '#4ade80'
+                                                    : isOnline ? '#60a5fa' : '#ef4444'}`,
+                                                borderRadius: '6px',
+                                            }}>
+                                                {activeSchedule ? (
+                                                    <div>
+                                                        <div style={{ fontSize: '0.875rem', color: '#4ade80', fontWeight: '500' }}>
+                                                            ▶ Now Playing
+                                                        </div>
+                                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+                                                            {activeSchedule.name}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                                            ({activeSchedule.playlistName})
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <div style={{
+                                                            width: '8px',
+                                                            height: '8px',
+                                                            borderRadius: '50%',
+                                                            backgroundColor: isOnline ? '#60a5fa' : '#ef4444'
+                                                        }} />
+                                                        <span style={{
+                                                            fontSize: '0.875rem',
+                                                            color: isOnline ? '#60a5fa' : '#ef4444',
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            {statusLabel} ({timeAgo(screen.updatedAt)})
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.actions}>
+                                            <button onClick={() => onGetLink(screen)} className={styles.actionBtn}>Link</button>
+                                            <button onClick={() => onSchedule(screen)} className={styles.actionBtn}>Schedule</button>
+                                            <button onClick={() => onEdit(screen)} className={styles.actionBtn}>Edit</button>
+                                            <button onClick={() => onDelete(screen.id)} className={`${styles.actionBtn} ${styles.danger}`}>Delete</button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    ))
-                )}
-            </div>
-
-            <ScreenModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                screen={selectedScreen}
-                spaces={initialSpaces}
-                playlists={playlists}
-                timecodes={timecodes}
-            />
-
-            {linkModalScreen && (
-                <LinkModal
-                    isOpen={!!linkModalScreen}
-                    onClose={() => setLinkModalScreen(null)}
-                    screenName={linkModalScreen.name}
-                    url={`${window.location.origin}/play/${linkModalScreen.id}`}
-                />
+                    </div>
+                ))
             )}
         </>
     );

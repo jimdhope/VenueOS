@@ -1,10 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
-import { createPlaylist, deletePlaylist } from '../app/actions/playlists';
-import styles from './playlists-list.module.css';
+import styles from './card-list.module.css';
 
 type Playlist = {
     id: string;
@@ -15,100 +12,77 @@ type Playlist = {
     };
 };
 
-function CreateButton() {
-    const { pending } = useFormStatus();
-    return (
-        <button type="submit" className="btn btn-primary" disabled={pending}>
-            {pending ? 'Creating...' : '+ Create Playlist'}
-        </button>
-    );
-}
+type PlaylistsListProps = {
+    playlists: Playlist[];
+    selectedIds: Set<string>;
+    setSelectedIds: (ids: Set<string>) => void;
+    onEdit: (playlist: Playlist) => void;
+    onDelete: (id: string) => Promise<void>;
+};
 
-export default function PlaylistsList({ playlists }: { playlists: Playlist[] }) {
-    const [isCreating, setIsCreating] = useState(false);
-
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
-        e.preventDefault(); // Prevent navigation
-        if (confirm('Delete this playlist?')) {
-            await deletePlaylist(id);
+export default function PlaylistsList({ playlists, selectedIds, setSelectedIds, onEdit, onDelete }: PlaylistsListProps) {
+    const toggleSelect = (id: string) => {
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
         }
+        setSelectedIds(newSet);
     };
 
     return (
-        <div className={styles.container}>
-            <div className={styles.header}>
-                <div>
-                    <h1 className={styles.title}>Playlists</h1>
-                    <p className={styles.subtitle}>Create sequences of content for your screens</p>
-                </div>
-                <button
-                    onClick={() => setIsCreating(true)}
-                    className="btn btn-primary"
-                    style={{ display: isCreating ? 'none' : 'flex' }}
-                >
-                    + New Playlist
-                </button>
-            </div>
-
-            {isCreating && (
-                <div className={styles.createForm}>
-                    <form
-                        action={async (formData) => {
-                            const res = await createPlaylist(null, formData);
-                            if (res.success) setIsCreating(false);
-                        }}
-                        className={styles.inlineForm}
-                    >
-                        <input
-                            type="text"
-                            name="name"
-                            placeholder="Playlist Name (e.g. Morning Menu)"
-                            required
-                            autoFocus
-                            className={styles.input}
-                        />
-                        <CreateButton />
-                        <button
-                            type="button"
-                            onClick={() => setIsCreating(false)}
-                            className="btn"
-                        >
-                            Cancel
-                        </button>
-                    </form>
-                </div>
-            )}
-
-            <div className={styles.grid}>
-                {playlists.length === 0 && !isCreating ? (
-                    <div className={styles.empty}>
-                        <p>No playlists found.</p>
-                    </div>
-                ) : (
-                    playlists.map((playlist) => (
-                        <Link
-                            key={playlist.id}
-                            href={`/admin/playlists/${playlist.id}`}
-                            className={styles.card}
-                        >
-                            <div className={styles.cardInfo}>
-                                <h3 className={styles.cardTitle}>{playlist.name}</h3>
-                                <div className={styles.meta}>
-                                    <span>{playlist._count.entries} Items</span>
-                                    <span>•</span>
-                                    <span>{playlist._count.screens} Screens</span>
+        <>
+            {playlists.length === 0 ? (
+                <div className={styles.empty}><p>No playlists found.</p></div>
+            ) : (
+                <div className={styles.grid}>
+                    {playlists.map((playlist) => {
+                        const isSelected = selectedIds.has(playlist.id);
+                        return (
+                            <div
+                                key={playlist.id}
+                                className={styles.card}
+                                style={{
+                                    opacity: isSelected ? 0.7 : 1,
+                                    backgroundColor: isSelected ? 'var(--bg-tertiary)' : undefined,
+                                    border: isSelected ? '2px solid var(--primary)' : undefined,
+                                }}
+                            >
+                                <div className={styles.cardHeader}>
+                                    <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => toggleSelect(playlist.id)}
+                                        style={{ marginTop: '2px', cursor: 'pointer' }}
+                                    />
+                                    <div style={{ flex: 1, marginLeft: '1rem' }}>
+                                        <Link href={`/admin/playlists/${playlist.id}`} style={{ textDecoration: 'none' }}>
+                                            <h3 className={styles.cardTitle}>{playlist.name}</h3>
+                                        </Link>
+                                    </div>
+                                </div>
+                                <div className={styles.cardContent}>
+                                    <div className={styles.meta}>
+                                        <div className={styles.metaItem}>
+                                            <span className={styles.label}>Items</span>
+                                            <span className={styles.value}>{playlist._count.entries}</span>
+                                        </div>
+                                        <div className={styles.metaItem}>
+                                            <span className={styles.label}>Screens</span>
+                                            <span className={styles.value}>{playlist._count.screens}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className={styles.actions}>
+                                    <button onClick={() => onEdit(playlist)} className={styles.actionBtn}>Edit</button>
+                                    <button onClick={() => onDelete(playlist.id)} className={`${styles.actionBtn} ${styles.danger}`}>Delete</button>
                                 </div>
                             </div>
-                            <button
-                                onClick={(e) => handleDelete(playlist.id, e)}
-                                className={styles.deleteBtn}
-                            >
-                                Delete
-                            </button>
-                        </Link>
-                    ))
-                )}
-            </div>
-        </div>
+                        );
+                    })}
+                </div>
+            )}
+        </>
     );
 }
