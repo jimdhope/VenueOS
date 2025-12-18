@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VenueOS
+
+VenueOS is a comprehensive content management and scheduling system designed for dynamic display across multiple screens and venues. It provides tools for managing media, creating playlists, scheduling content playback, and monitoring screen health, offering a flexible solution for digital signage and interactive installations.
+
+## Features
+
+*   **Content Management:** Upload, organize, and manage various media types (images, videos, etc.).
+*   **Playlist Creation:** Assemble media into custom playlists for sequential or randomized playback.
+*   **Advanced Scheduling:** Define intricate schedules for content to play on specific screens at designated times.
+*   **Multi-Venue Support:** Manage content and screens across different physical venues.
+*   **Screen Health Monitoring:** Keep track of the operational status of connected display screens.
+*   **Timecode Synchronization:** Precise control over content playback and synchronization.
+*   **Admin Interface:** A dedicated administrative panel for easy management of all aspects of the system.
+
+## Technologies Used
+
+*   **Framework:** Next.js (React)
+*   **Language:** TypeScript
+*   **ORM:** Prisma
+*   **Database:** PostgreSQL
+*   **Styling:** CSS Modules
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+*   **Node.js:** v18.x or higher (LTS recommended)
+*   **npm:** v9.x or higher (comes with Node.js)
+*   **PostgreSQL:** A running PostgreSQL database instance.
+
+### Installation
+
+1.  **Clone the repository:**
+
+    ```bash
+    git clone https://github.com/your-username/VenueOS.git
+    cd VenueOS
+    ```
+
+2.  **Install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3.  **Set up environment variables:**
+
+    Create a `.env` file in the root of your project. You'll need to populate it with your database connection string and any other necessary environment variables. A `.env.example` file is not provided, so you'll need to create this manually.
+
+    ```
+    DATABASE_URL="postgresql://user:password@localhost:5432/your_database_name"
+    # Add any other environment variables required by your application
+    ```
+    *Replace `user`, `password`, `localhost:5432`, and `your_database_name` with your PostgreSQL database credentials.*
+
+4.  **Database Setup:**
+
+    Apply Prisma migrations and seed the database:
+
+    ```bash
+    npx prisma migrate dev --name init # You might want to use a more descriptive name than 'init'
+    npx prisma db seed
+    ```
+
+### Running the Development Server
+
+To start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser to view the application. The page will hot-reload as you make changes.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Once the application is running, navigate to the `/admin` route (e.g., `http://localhost:3000/admin`) to access the administrative interface. From there, you can:
 
-## Learn More
+*   Manage venues, screens, and spaces.
+*   Upload and organize content.
+*   Create and edit playlists.
+*   Set up and manage content schedules.
+*   Monitor screen diagnostics.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+.
+├── prisma/           # Prisma schema, migrations, and seed data
+├── public/           # Static assets (images, fonts, etc.)
+└── src/
+    ├── app/          # Next.js App Router: pages, API routes, and layouts
+    │   ├── admin/    # Admin panel routes and components
+    │   ├── api/      # API endpoints
+    │   └── play/     # Public-facing screen playback routes
+    ├── components/   # Reusable React components
+    └── lib/          # Utility functions, database client, and helpers
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Contributing
 
-## Deploy on Vercel
+We welcome contributions to VenueOS! To contribute:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1.  Fork the repository.
+2.  Create a new branch for your feature or bug fix: `git checkout -b feature/your-feature-name`.
+3.  Make your changes and ensure they adhere to the project's coding style.
+4.  Write clear, concise commit messages.
+5.  Push your branch to your fork.
+6.  Open a Pull Request to the `main` branch of the original repository, describing your changes in detail.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For questions or feedback, please open an issue on the GitHub repository.
