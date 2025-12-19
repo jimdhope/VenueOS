@@ -1,6 +1,11 @@
 import { prisma } from '@/lib/db';
 import PlaylistEditor from '@/components/PlaylistEditor';
 import { notFound } from 'next/navigation';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Playlist Editor",
+};
 
 export const dynamic = 'force-dynamic';
 

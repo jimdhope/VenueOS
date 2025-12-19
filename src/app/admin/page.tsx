@@ -3,6 +3,11 @@ import Link from 'next/link';
 import { isScreenOnline, timeAgo } from '@/lib/utils';
 import styles from './page.module.css';
 import AdminPageLayout from '@/components/AdminPageLayout';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Admin Dashboard",
+};
 
 export const dynamic = 'force-dynamic';
 

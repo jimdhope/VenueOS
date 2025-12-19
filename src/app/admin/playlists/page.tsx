@@ -5,6 +5,11 @@ import { getPlaylists, deletePlaylist } from '@/app/actions/playlists';
 import PlaylistsList from '@/components/PlaylistsList';
 import AdminPageLayout from '@/components/AdminPageLayout';
 import PlaylistModal from '@/components/PlaylistModal';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Playlists",
+};
 
 type Playlist = {
     id: string;

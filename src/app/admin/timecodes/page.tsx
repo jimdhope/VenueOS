@@ -5,6 +5,11 @@ import { getTimecodes, deleteTimecode, startTimecode, stopTimecode } from '@/app
 import TimecodesList from '@/components/TimecodesList';
 import AdminPageLayout from '@/components/AdminPageLayout';
 import TimecodeModal from '@/components/TimecodeModal';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Timecodes",
+};
 
 type Timecode = any;
 

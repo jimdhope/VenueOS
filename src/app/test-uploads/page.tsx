@@ -1,6 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Test Uploads",
+};
 
 export default function TestUploadsPage() {
     const [testResults, setTestResults] = useState<any[]>([]);

@@ -1,4 +1,9 @@
 import PlayerEngine from '@/components/PlayerEngine';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Player",
+};
 
 export const dynamic = 'force-dynamic';
 

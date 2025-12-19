@@ -5,6 +5,11 @@ import { getSpacesPageData, deleteSpace } from '@/app/actions/spaces';
 import SpacesList from '@/components/SpacesList';
 import AdminPageLayout from '@/components/AdminPageLayout';
 import SpaceModal from '@/components/SpaceModal';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Spaces",
+};
 
 type SpaceWithDetails = any;
 type Venue = any;

@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/db';
 import EditorMain from '@/components/editor/EditorMain';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Content Editor",
+};
 
 export default async function EditorPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;

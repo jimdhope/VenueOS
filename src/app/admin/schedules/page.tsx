@@ -5,6 +5,11 @@ import { getSchedulesPageData, deleteSchedule } from '@/app/actions/schedules';
 import SchedulesList from '@/components/SchedulesList';
 import AdminPageLayout from '@/components/AdminPageLayout';
 import ScheduleModal from '@/components/ScheduleModal';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Schedules",
+};
 
 type Schedule = any;
 type Screen = any;

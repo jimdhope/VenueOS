@@ -1,5 +1,10 @@
 import Image from "next/image";
 import styles from "./page.module.css"; // Assuming some basic styles might be useful, or I'll define new ones.
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VenueOS - Overview",
+};
 
 export default function Home() {
   return (
