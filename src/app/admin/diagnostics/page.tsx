@@ -2,11 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { prisma } from '@/lib/db';
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "VenueOS - Diagnostics",
-};
 
 type DiagnosticsData = {
     uploadsDir: string;

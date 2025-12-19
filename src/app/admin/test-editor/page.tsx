@@ -2,11 +2,6 @@
 
 import React, { useEffect, useRef, useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "VenueOS - Test Editor",
-};
 
 const FabricEditor = () => {
     const [fabric, setFabric] = useState<any>(null);

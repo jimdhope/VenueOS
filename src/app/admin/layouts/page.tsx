@@ -5,11 +5,6 @@ import { getContent, deleteContent } from '@/app/actions/content';
 import ContentList from '@/components/ContentList';
 import AdminPageLayout from '@/components/AdminPageLayout';
 import { useRouter } from 'next/navigation';
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "VenueOS - Layouts",
-};
 
 type Content = any;
 

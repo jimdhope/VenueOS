@@ -9,11 +9,6 @@ import AdminPageLayout from '@/components/AdminPageLayout';
 import ScreenModal from '@/components/ScreenModal';
 import LinkModal from '@/components/LinkModal';
 import ScheduleModal from '@/components/ScheduleModal';
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "VenueOS - Screens",
-};
 
 type ScreenWithDetails = any; // Simplified for brevity
 type Space = any;

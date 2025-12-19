@@ -6,11 +6,6 @@ import { getVenuesWithCount, deleteVenue } from '@/app/actions/venues';
 import VenuesList from '@/components/VenuesList';
 import AdminPageLayout from '@/components/AdminPageLayout';
 import VenueModal from '@/components/VenueModal';
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "VenueOS - Venues",
-};
 
 type VenueWithCount = { id: string; name: string; _count?: { spaces: number } };
 
